@@ -63,32 +63,38 @@ func TestMoveAlienToCity(t *testing.T) {
 	require.NotNil(t, err)
 }
 
-// func TestAreAllAliensDestroyed(t *testing.T) {
-// 	app := NewApp(3, 3)
-// 	controller := NewController(app)
+func TestAreAllAliensDestroyed(t *testing.T) {
+	app := NewDummyApp()
+	controller := NewController(app)
 
-// 	// Destroy all aliens.
-// 	controller.DestroyAlien(0)
-// 	controller.DestroyAlien(1)
-// 	controller.DestroyAlien(2)
+	areAllAliensDestroyed := controller.AreAllAliensDestroyed()
+	assert.False(t, areAllAliensDestroyed)
 
-// 	if !controller.AreAllAliensDestroyed() {
-// 		t.Errorf("Expected all aliens to be destroyed, got false")
-// 	}
-// }
+	// Destroy all aliens.
+	controller.DestroyAlien(0)
+	controller.DestroyAlien(1)
+	controller.DestroyAlien(2)
+	controller.DestroyAlien(3)
 
-// func TestIsAlienMovementLimitReached(t *testing.T) {
-// 	app := NewApp(3, 3)
-// 	controller := NewController(app)
+	areAllAliensDestroyed = controller.AreAllAliensDestroyed()
+	assert.True(t, areAllAliensDestroyed)
+}
 
-// 	// Move all aliens 10,000 times.
-// 	for i := 0; i < 10000; i++ {
-// 		controller.MoveAlienToCity(0, "Bar")
-// 		controller.MoveAlienToCity(1, "Bar")
-// 		controller.MoveAlienToCity(2, "Bar")
-// 	}
+func TestIsAlienMovementLimitReached(t *testing.T) {
+	app := NewDummyApp()
+	controller := NewController(app)
 
-// 	if !controller.IsAlienMovementLimitReached() {
-// 		t.Errorf("Expected alien movement limit to be reached, got false")
-// 	}
-// }
+	isAlienMvmtReached := controller.IsAlienMovementLimitReached()
+	assert.False(t, isAlienMvmtReached)
+
+	// Move all aliens 10,000 times.
+	for i := 0; i < 10000; i++ {
+		controller.MoveAlienToCity(0, "A")
+		controller.MoveAlienToCity(1, "B")
+		controller.MoveAlienToCity(2, "C")
+		controller.MoveAlienToCity(3, "D")
+	}
+
+	isAlienMvmtReached = controller.IsAlienMovementLimitReached()
+	assert.True(t, isAlienMvmtReached)
+}

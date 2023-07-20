@@ -44,6 +44,13 @@ func (cc *Controller) DestroyCity(cityName string) error {
 	return nil
 }
 
+// MoveAlienToCity moves an alien to a city.
+// If the alien is not in the city, it returns an error.
+// If the city does not exist, it returns an error.
+// If the city is isolated, it returns an error.
+// Otherwise, it moves the alien to the city.
+// Checking for whether the alien is already in the city is omitted to ease up testing
+// and such case would be avoided thanks to the caller's logic
 func (cc *Controller) MoveAlienToCity(alienID int, cityName string) error {
 	if alienID < 0 || alienID >= len(cc.app.Aliens) {
 		return fmt.Errorf("invalid alien ID")
@@ -73,6 +80,7 @@ func (cc *Controller) MoveAlienToCity(alienID int, cityName string) error {
 	cc.app.AlienLocations[alien.CurrentCity] = aliensInCity
 	cc.app.AlienLocations[nextCity] = append(cc.app.AlienLocations[nextCity], alien)
 	alien.CurrentCity = nextCity
+	alien.Moved++
 
 	return nil
 }
