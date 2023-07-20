@@ -14,6 +14,8 @@ func NewDummyApp() *App {
 	app.Aliens[1] = &Alien{ID: 1, Moved: 0}
 	app.Aliens[2] = &Alien{ID: 2, Moved: 0}
 	app.Aliens[3] = &Alien{ID: 3, Moved: 0}
+	app.Aliens[4] = &Alien{ID: 4, Moved: 0}
+	app.Aliens[5] = &Alien{ID: 5, Moved: 0}
 
 	cities := []*City{
 		&City{Name: "A"},

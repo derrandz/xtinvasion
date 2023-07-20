@@ -62,3 +62,21 @@ func TestReadMapFromFile(t *testing.T) {
 		app.WorldMap.Cities["D"].Neighbours["east"].Name,
 		"Expected C for D east, got", app.WorldMap.Cities["D"].Neighbours["east"].Name)
 }
+
+func TestPopulateMapWithAliens(t *testing.T) {
+	app := NewEmptyDummyApp()
+	prefilledApp := NewDummyApp()
+
+	app.Aliens = prefilledApp.Aliens
+	app.WorldMap = prefilledApp.WorldMap
+
+	app.populateMapWithAliens()
+
+	populatedCities := len(app.AlienLocations)
+	assert.LessOrEqual(t, populatedCities, len(app.WorldMap.Cities))
+
+	for city, aliens := range app.AlienLocations {
+		assert.GreaterOrEqual(t, len(aliens), 1)
+		assert.Equal(t, city, aliens[0].CurrentCity)
+	}
+}
