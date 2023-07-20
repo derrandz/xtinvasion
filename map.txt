@@ -1,0 +1,17 @@
+Solitude north=Avaloria
+Avaloria north=Mystica west=Zephyrville south=Solitude east=Verdantis
+Zephyrville east=Avaloria south=Marigoldia
+Marigoldia north=Zephyrville east=Starhaven
+Starhaven west=Marigoldia south=Elysium
+Elysium north=Starhaven east=Crystalia west=Harmonyville
+Harmonyville east=Elysium south=Frostholm
+Crystalia west=Elysium east=Serenia
+Mystica west=Avaloria east=Wizardwood
+Verdantis west=Avaloria north=Thundoria
+Thundoria south=Verdantis
+Serenia west=Crystalia east=Ivydale
+Ivydale west=Serenia
+Wizardwood west=Mystica south=Fireholm
+Fireholm north=Wizardwood
+Frostholm north=Harmonyville east=Shadowkeep
+Shadowkeep west=Frostholm
