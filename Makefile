@@ -21,6 +21,9 @@ run:
 run-with-aliens:
 	$(GO) run main.go start --aliens=$(num) --file=map.txt
 
+test:
+	$(GO) test ./...
+
 # Help target: print available targets
 help:
 	@echo "Available targets:"
