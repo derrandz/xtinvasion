@@ -5,8 +5,9 @@ func NewDummyApp() *App {
 		WorldMap: &Map{
 			Cities: make(map[string]*City),
 		},
-		Aliens:         make([]*Alien, 6),
+		Aliens:         make([]*Alien, 4),
 		AlienLocations: make(map[*City][]*Alien),
+		done:           make(chan struct{}),
 	}
 
 	// Create aliens.
@@ -14,8 +15,6 @@ func NewDummyApp() *App {
 	app.Aliens[1] = &Alien{ID: 1, Moved: 0}
 	app.Aliens[2] = &Alien{ID: 2, Moved: 0}
 	app.Aliens[3] = &Alien{ID: 3, Moved: 0}
-	app.Aliens[4] = &Alien{ID: 4, Moved: 0}
-	app.Aliens[5] = &Alien{ID: 5, Moved: 0}
 
 	cities := []*City{
 		&City{Name: "A"},
@@ -49,7 +48,7 @@ func NewDummyApp() *App {
 		"west":  cities[3],
 	}
 
-	app.WorldMap.Cities["D"] = cities[2]
+	app.WorldMap.Cities["D"] = cities[3]
 	app.WorldMap.Cities["D"].Neighbours = map[string]*City{
 		"west": cities[1],
 		"east": cities[2],
@@ -67,6 +66,7 @@ func NewDummyApp() *App {
 	app.AlienLocations[cities[3]] = []*Alien{app.Aliens[3]}
 	app.Aliens[3].CurrentCity = cities[3]
 
+	app.ctrl = NewController(app)
 	return app
 }
 

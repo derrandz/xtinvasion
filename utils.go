@@ -1,12 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 )
 
 func getRandomNeighbor(city *City) *City {
 	if city == nil || len(city.Neighbours) == 0 {
+		fmt.Println("getRandomNeighbor: city is nil or has no neighbours", city, city.Neighbours)
 		return nil
 	}
 

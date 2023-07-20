@@ -106,6 +106,7 @@ func (a *App) Init(cmd *cobra.Command) {
 }
 
 func (a *App) Run() {
+	a.PrintState()
 	for {
 		// Check if the app has been stopped
 		if atomic.LoadInt32(&a.isStopped) == 1 {
@@ -132,13 +133,18 @@ func (a *App) Run() {
 		}
 
 		// Move aliens around in the map
-		for _, alien := range a.Aliens {
+		for i, alien := range a.Aliens {
 			if alien != nil {
+				fmt.Println("Alien", i, "Current city", alien.CurrentCity.Name)
 				nextCity := getRandomNeighbor(alien.CurrentCity)
 
+				fmt.Println("Alien", i, "Next city", nextCity)
 				// Increase moved count
-				alien.Moved++
-				a.ctrl.MoveAlienToCity(alien.ID, nextCity.Name)
+				fmt.Println("Alien", alien.ID, "moved to", nextCity.Name, "moved", alien.Moved, "times", "ctrl", a.ctrl)
+				err := a.ctrl.MoveAlienToCity(alien.ID, nextCity.Name)
+				if err != nil {
+					fmt.Println(err)
+				}
 			}
 		}
 	}
@@ -222,10 +228,10 @@ func (a *App) readMapFromFile(filename string) error {
 
 func (a *App) PrintState() {
 	fmt.Println("Remaining Cities:")
-	for cityName, city := range a.WorldMap.Cities {
-		fmt.Printf("%s ", cityName)
+	for _, city := range a.WorldMap.Cities {
+		fmt.Printf("%s ", city.Name)
 		if len(city.Neighbours) > 0 {
-			fmt.Printf("connecting to ")
+			fmt.Printf("connecting to %v", city.Neighbours)
 			var neighbours []string
 			for _, neighbour := range city.Neighbours {
 				neighbours = append(neighbours, neighbour.Name)

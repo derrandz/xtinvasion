@@ -98,3 +98,20 @@ func TestIsAlienMovementLimitReached(t *testing.T) {
 	isAlienMvmtReached = controller.IsAlienMovementLimitReached()
 	assert.True(t, isAlienMvmtReached)
 }
+
+func TestIsWorldDestroyed(t *testing.T) {
+	app := NewDummyApp()
+	controller := NewController(app)
+
+	isWorldDestroyed := controller.IsWorldDestroyed()
+	assert.False(t, isWorldDestroyed)
+
+	// Destroy all cities.
+	controller.DestroyCity("A")
+	controller.DestroyCity("B")
+	controller.DestroyCity("C")
+	controller.DestroyCity("D")
+
+	isWorldDestroyed = controller.IsWorldDestroyed()
+	assert.True(t, isWorldDestroyed)
+}

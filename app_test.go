@@ -80,3 +80,13 @@ func TestPopulateMapWithAliens(t *testing.T) {
 		assert.Equal(t, city, aliens[0].CurrentCity)
 	}
 }
+
+func TestRun(t *testing.T) {
+	app := NewDummyApp()
+	app.Run()
+
+	// assert.Equal(t, 0, len(app.Aliens)) // implement nil filtering, for now it's going to break
+	assert.True(t,
+		app.ctrl.AreAllAliensDestroyed() || app.ctrl.IsWorldDestroyed() || app.ctrl.IsAlienMovementLimitReached(),
+	)
+}

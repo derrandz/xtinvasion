@@ -52,10 +52,12 @@ func (cc *Controller) DestroyCity(cityName string) error {
 // Checking for whether the alien is already in the city is omitted to ease up testing
 // and such case would be avoided thanks to the caller's logic
 func (cc *Controller) MoveAlienToCity(alienID int, cityName string) error {
+	fmt.Println("MoveAlienToCity", alienID, cityName)
 	if alienID < 0 || alienID >= len(cc.app.Aliens) {
 		return fmt.Errorf("invalid alien ID")
 	}
 
+	fmt.Println("app.Aliens", cc.app.Aliens, alienID)
 	alien := cc.app.Aliens[alienID]
 	if alien == nil {
 		return fmt.Errorf("alien %d does not exist", alienID)
@@ -76,12 +78,14 @@ func (cc *Controller) MoveAlienToCity(alienID int, cityName string) error {
 		return fmt.Errorf("alien %d is not in city %s", alienID, alien.CurrentCity.Name)
 	}
 
+	fmt.Println("Here?")
 	aliensInCity = append(aliensInCity[:findAlienIndex(aliensInCity, alienID)], aliensInCity[findAlienIndex(aliensInCity, alienID)+1:]...)
 	cc.app.AlienLocations[alien.CurrentCity] = aliensInCity
 	cc.app.AlienLocations[nextCity] = append(cc.app.AlienLocations[nextCity], alien)
 	alien.CurrentCity = nextCity
 	alien.Moved++
 
+	fmt.Println("Final")
 	return nil
 }
 
@@ -92,6 +96,10 @@ func (cc *Controller) AreAllAliensDestroyed() bool {
 		}
 	}
 	return true
+}
+
+func (cc *Controller) IsWorldDestroyed() bool {
+	return len(cc.app.WorldMap.Cities) == 0
 }
 
 func (cc *Controller) IsAlienMovementLimitReached() bool {
