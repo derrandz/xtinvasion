@@ -147,11 +147,10 @@ func (a *App) Run() {
 	close(a.done)
 }
 
-func (a *App) readMapFromFile(filename string) {
+func (a *App) readMapFromFile(filename string) error {
 	file, err := os.Open(filename)
 	if err != nil {
-		fmt.Println("Error opening file:", err)
-		return
+		return fmt.Errorf("Error opening file: %w", err)
 	}
 	defer file.Close()
 
@@ -212,11 +211,13 @@ func (a *App) readMapFromFile(filename string) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		fmt.Println("Error reading file:", err)
+		return fmt.Errorf("Error reading file: %w", err)
 	}
 
 	fmt.Println("Map read successfully.")
 	fmt.Println("Cities:", len(a.WorldMap.Cities))
+
+	return nil
 }
 
 func (a *App) PrintState() {

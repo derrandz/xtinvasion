@@ -67,3 +67,11 @@ func NewDummyApp() *App {
 
 	return app
 }
+
+func NewEmptyDummyApp() *App {
+	app := &App{}
+	app.Aliens = make([]*Alien, 0)
+	app.WorldMap = &Map{Cities: make(map[string]*City)}
+	app.AlienLocations = make(map[*City][]*Alien)
+	return app
+}
