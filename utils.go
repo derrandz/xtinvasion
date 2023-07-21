@@ -6,10 +6,13 @@ import (
 	"time"
 )
 
-func getRandomNeighbor(city *City) *City {
-	if city == nil || len(city.Neighbours) == 0 {
-		fmt.Println("getRandomNeighbor: city is nil or has no neighbours", city, city.Neighbours)
-		return nil
+func getRandomNeighbor(city *City) (*City, error) {
+	if city == nil {
+		return nil, fmt.Errorf("getRandomNeighbor: city is nil")
+	}
+
+	if len(city.Neighbours) == 0 {
+		return city, fmt.Errorf("getRandomNeighbor: city %s has no neighbours", city.Name)
 	}
 
 	rand.Seed(time.Now().UnixNano())
@@ -17,13 +20,13 @@ func getRandomNeighbor(city *City) *City {
 	i := 0
 	for neighbour := range city.Neighbours {
 		if i == index {
-			return city.Neighbours[neighbour]
+			return city.Neighbours[neighbour], nil
 		}
 		i++
 	}
 
 	// This should not happen, but return nil as a safety measure
-	return nil
+	return nil, fmt.Errorf("getRandomNeighbor: could not find a random neighbour")
 }
 
 func oppositeDirection(direction string) string {
@@ -48,4 +51,15 @@ func findAlienIndex(aliens []*Alien, alienID int) int {
 		}
 	}
 	return -1
+}
+
+func removeSliceElement[T any](slice []T, index int) []T {
+	// Check if the index is out of range
+	if index < 0 || index >= len(slice) {
+		return slice
+	}
+
+	// Create a new slice without the element at the given index
+	newSlice := append(slice[:index], slice[index+1:]...)
+	return newSlice
 }

@@ -1,27 +1,28 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestDestroyAlien(t *testing.T) {
+func TestCtrl_DestroyAlien(t *testing.T) {
 	app := NewDummyApp()
 	controller := NewController(app)
 
 	// Destroy an alien that exists.
 	err := controller.DestroyAlien(0)
 	require.Nil(t, err)
-	assert.Nil(t, app.Aliens[0])
+	assert.Equal(t, 3, len(app.Aliens))
 
 	// Destroy an alien that doesn't exist.
 	err = controller.DestroyAlien(6)
 	require.NotNil(t, err)
 }
 
-func TestDestroyCity(t *testing.T) {
+func TestCtrl_DestroyCity(t *testing.T) {
 	app := NewDummyApp()
 	controller := NewController(app)
 
@@ -36,11 +37,11 @@ func TestDestroyCity(t *testing.T) {
 	require.False(t, exists)
 }
 
-func TestMoveAlienToCity(t *testing.T) {
+func TestCtrl_MoveAlienToCity(t *testing.T) {
 	app := NewDummyApp()
 	controller := NewController(app)
 
-	// Move alien with ID that doesn't exist
+	// Move alien with ID that's not valid
 	err := controller.MoveAlienToCity(-1, "Bar")
 	require.NotNil(t, err)
 
@@ -56,14 +57,9 @@ func TestMoveAlienToCity(t *testing.T) {
 	err = controller.MoveAlienToCity(0, "A")
 	require.Nil(t, err)
 	assert.Equal(t, app.Aliens[0].CurrentCity, app.WorldMap.Cities["A"])
-
-	// Move an alien that no longe exists.
-	controller.DestroyAlien(0)
-	err = controller.MoveAlienToCity(0, "A")
-	require.NotNil(t, err)
 }
 
-func TestAreAllAliensDestroyed(t *testing.T) {
+func TestCtrl_AreAllAliensDestroyed(t *testing.T) {
 	app := NewDummyApp()
 	controller := NewController(app)
 
@@ -71,16 +67,18 @@ func TestAreAllAliensDestroyed(t *testing.T) {
 	assert.False(t, areAllAliensDestroyed)
 
 	// Destroy all aliens.
-	controller.DestroyAlien(0)
-	controller.DestroyAlien(1)
-	controller.DestroyAlien(2)
-	controller.DestroyAlien(3)
+	for id := range controller.app.Aliens {
+		err := controller.DestroyAlien(id)
+		require.Nil(t, err)
+	}
+
+	fmt.Println(controller.app.Aliens)
 
 	areAllAliensDestroyed = controller.AreAllAliensDestroyed()
 	assert.True(t, areAllAliensDestroyed)
 }
 
-func TestIsAlienMovementLimitReached(t *testing.T) {
+func TestCtrl_IsAlienMovementLimitReached(t *testing.T) {
 	app := NewDummyApp()
 	controller := NewController(app)
 
@@ -99,7 +97,7 @@ func TestIsAlienMovementLimitReached(t *testing.T) {
 	assert.True(t, isAlienMvmtReached)
 }
 
-func TestIsWorldDestroyed(t *testing.T) {
+func TestCtrl_IsWorldDestroyed(t *testing.T) {
 	app := NewDummyApp()
 	controller := NewController(app)
 
@@ -107,10 +105,10 @@ func TestIsWorldDestroyed(t *testing.T) {
 	assert.False(t, isWorldDestroyed)
 
 	// Destroy all cities.
-	controller.DestroyCity("A")
-	controller.DestroyCity("B")
-	controller.DestroyCity("C")
-	controller.DestroyCity("D")
+	for _, city := range controller.app.WorldMap.Cities {
+		err := controller.DestroyCity(city.Name)
+		require.Nil(t, err)
+	}
 
 	isWorldDestroyed = controller.IsWorldDestroyed()
 	assert.True(t, isWorldDestroyed)

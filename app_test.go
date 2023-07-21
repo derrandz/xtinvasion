@@ -77,16 +77,43 @@ func TestPopulateMapWithAliens(t *testing.T) {
 
 	for city, aliens := range app.AlienLocations {
 		assert.GreaterOrEqual(t, len(aliens), 1)
-		assert.Equal(t, city, aliens[0].CurrentCity)
+		for _, alien := range aliens {
+			assert.Equal(t, city, alien.CurrentCity)
+		}
 	}
 }
 
 func TestRun(t *testing.T) {
 	app := NewDummyApp()
+
+	app.Aliens[4] = &Alien{ID: 4, CurrentCity: app.WorldMap.Cities["A"]}
+	app.Aliens[5] = &Alien{ID: 5, CurrentCity: app.WorldMap.Cities["B"]}
+	app.Aliens[6] = &Alien{ID: 6, CurrentCity: app.WorldMap.Cities["B"]}
+	app.Aliens[7] = &Alien{ID: 7, CurrentCity: app.WorldMap.Cities["C"]}
+	app.Aliens[8] = &Alien{ID: 8, CurrentCity: app.WorldMap.Cities["D"]}
+
 	app.Run()
 
 	// assert.Equal(t, 0, len(app.Aliens)) // implement nil filtering, for now it's going to break
 	assert.True(t,
-		app.ctrl.AreAllAliensDestroyed() || app.ctrl.IsWorldDestroyed() || app.ctrl.IsAlienMovementLimitReached(),
+		app.ctrl.AreAllAliensDestroyed() || app.ctrl.IsWorldDestroyed() || app.ctrl.IsAlienMovementLimitReached() || app.ctrl.AreRemainingAliensTrapped(),
 	)
+
+	if app.ctrl.AreAllAliensDestroyed() {
+		assert.Equal(t, 0, len(app.Aliens))
+		for _, aliens := range app.AlienLocations {
+			assert.Equal(t, 0, len(aliens))
+		}
+	} else if app.ctrl.IsWorldDestroyed() {
+		assert.Equal(t, 0, len(app.WorldMap.Cities))
+		assert.Equal(t, 0, len(app.AlienLocations))
+	} else if app.ctrl.IsAlienMovementLimitReached() {
+		assert.NotEqual(t, 0, len(app.AlienLocations))
+		assert.NotEqual(t, 0, len(app.WorldMap.Cities))
+		assert.NotEqual(t, 0, len(app.Aliens))
+	} else if app.ctrl.AreRemainingAliensTrapped() {
+		assert.NotEqual(t, 0, len(app.AlienLocations))
+		assert.NotEqual(t, 0, len(app.WorldMap.Cities))
+		assert.NotEqual(t, 0, len(app.Aliens))
+	}
 }

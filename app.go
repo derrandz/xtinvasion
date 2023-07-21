@@ -26,11 +26,13 @@ type Alien struct {
 	Moved       int
 }
 
+type AlienSet map[int]*Alien
+
 type App struct {
 	ctrl *Controller
 
-	Aliens         []*Alien
-	AlienLocations map[*City][]*Alien
+	Aliens         AlienSet
+	AlienLocations map[*City]AlienSet
 	WorldMap       *Map
 
 	isStopped int32 // Use int32 for atomic operations
@@ -48,7 +50,11 @@ func (a *App) createAliens(numAliens int) {
 func (a *App) populateMapWithAliens() {
 	for _, alien := range a.Aliens {
 		city := a.getRandomCity()
-		a.AlienLocations[city] = append(a.AlienLocations[city], alien)
+		if location, found := a.AlienLocations[city]; found {
+			location[alien.ID] = alien
+		} else {
+			a.AlienLocations[city] = map[int]*Alien{alien.ID: alien}
+		}
 		alien.CurrentCity = city
 	}
 }
@@ -66,97 +72,17 @@ func (a *App) getRandomCity() *City {
 	return cities[rand.Intn(len(cities))]
 }
 
-func (a *App) DefineFlags(cmd *cobra.Command) {
-	cmd.Flags().IntP("aliens", "a", 5, "Number of aliens")
-	cmd.Flags().StringP("file", "f", "map.txt", "Map file")
-}
-
-func (a *App) ParseFlags(cmd *cobra.Command) []any {
+func (a *App) parseFlags(cmd *cobra.Command) []any {
 	numAliens, _ := cmd.Flags().GetInt("aliens")
 	filename, _ := cmd.Flags().GetString("file")
 
 	return []any{numAliens, filename}
 }
 
-func (a *App) Init(cmd *cobra.Command) {
-	a.done = make(chan struct{})
-	a.isStopped = 0
-
-	// Read the map from the file and create the cities
-	flags := a.ParseFlags(cmd)
-
-	numAliens := flags[0].(int)
-	filename := flags[1].(string)
-
-	a.Aliens = make([]*Alien, numAliens)
-	a.WorldMap = &Map{Cities: make(map[string]*City)}
-	a.AlienLocations = make(map[*City][]*Alien)
-
-	// Read the map from the file and create the cities
-	a.readMapFromFile(filename)
-
-	// Create aliens and assign them to cities
-	a.createAliens(numAliens)
-
-	// Populate the alien locations
-	a.populateMapWithAliens()
-
-	// Initialize the queryController and commandController
-	a.ctrl = &Controller{app: a}
-}
-
-func (a *App) Run() {
-	a.PrintState()
-	for {
-		// Check if the app has been stopped
-		if atomic.LoadInt32(&a.isStopped) == 1 {
-			break
-		}
-
-		// Check if all aliens have been destroyed
-		if a.ctrl.AreAllAliensDestroyed() {
-			fmt.Println("All aliens have been destroyed.")
-			break
-		}
-
-		// Check if all aliens have moved 10,000 times
-		if a.ctrl.IsAlienMovementLimitReached() {
-			fmt.Println("All aliens have moved 10,000 times.")
-			break
-		}
-
-		// Check if any city has two or more aliens and destroy them
-		for city := range a.AlienLocations {
-			if len(a.AlienLocations[city]) > 1 {
-				a.ctrl.DestroyCity(city.Name)
-			}
-		}
-
-		// Move aliens around in the map
-		for i, alien := range a.Aliens {
-			if alien != nil {
-				fmt.Println("Alien", i, "Current city", alien.CurrentCity.Name)
-				nextCity := getRandomNeighbor(alien.CurrentCity)
-
-				fmt.Println("Alien", i, "Next city", nextCity)
-				// Increase moved count
-				fmt.Println("Alien", alien.ID, "moved to", nextCity.Name, "moved", alien.Moved, "times", "ctrl", a.ctrl)
-				err := a.ctrl.MoveAlienToCity(alien.ID, nextCity.Name)
-				if err != nil {
-					fmt.Println(err)
-				}
-			}
-		}
-	}
-
-	// Indicate that the main loop has finished by closing the channel
-	close(a.done)
-}
-
 func (a *App) readMapFromFile(filename string) error {
 	file, err := os.Open(filename)
 	if err != nil {
-		return fmt.Errorf("Error opening file: %w", err)
+		return fmt.Errorf("error opening file: %w", err)
 	}
 	defer file.Close()
 
@@ -217,13 +143,104 @@ func (a *App) readMapFromFile(filename string) error {
 	}
 
 	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("Error reading file: %w", err)
+		return fmt.Errorf("error reading file: %w", err)
 	}
 
 	fmt.Println("Map read successfully.")
 	fmt.Println("Cities:", len(a.WorldMap.Cities))
 
 	return nil
+}
+
+func (a *App) DefineFlags(cmd *cobra.Command) {
+	cmd.Flags().IntP("aliens", "a", 5, "Number of aliens")
+	cmd.Flags().StringP("file", "f", "map.txt", "Map file")
+}
+
+func (a *App) Init(cmd *cobra.Command) {
+	a.done = make(chan struct{})
+	a.isStopped = 0
+
+	// Read the map from the file and create the cities
+	flags := a.parseFlags(cmd)
+
+	numAliens := flags[0].(int)
+	filename := flags[1].(string)
+
+	a.Aliens = make(AlienSet, numAliens)
+	a.WorldMap = &Map{Cities: make(map[string]*City)}
+	a.AlienLocations = make(map[*City]AlienSet)
+
+	// Read the map from the file and create the cities
+	a.readMapFromFile(filename)
+
+	// Create aliens and assign them to cities
+	a.createAliens(numAliens)
+
+	// Populate the alien locations
+	a.populateMapWithAliens()
+
+	// Initialize the queryController and commandController
+	a.ctrl = &Controller{app: a}
+}
+
+func (a *App) Run() {
+	a.PrintState()
+	for {
+		// Check if the app has been stopped
+		if atomic.LoadInt32(&a.isStopped) == 1 {
+			break
+		}
+
+		// Check if all aliens have been destroyed
+		if a.ctrl.AreAllAliensDestroyed() {
+			fmt.Println("All aliens have been destroyed.")
+			break
+		}
+
+		// Check if all aliens have moved 10,000 times
+		if a.ctrl.IsAlienMovementLimitReached() {
+			fmt.Println("All aliens have moved 10,000 times.")
+			break
+		}
+
+		if a.ctrl.AreRemainingAliensTrapped() {
+			fmt.Println("All remaining aliens are trapped.")
+			break
+		}
+
+		// Check if any city has two or more aliens and destroy them
+		for city := range a.AlienLocations {
+			if len(a.AlienLocations[city]) > 1 {
+				err := a.ctrl.DestroyCity(city.Name)
+				if err != nil {
+					fmt.Println(err)
+				}
+			}
+		}
+
+		// Move aliens around in the map
+		for _, alien := range a.Aliens {
+			if alien != nil {
+				nextCity, err := getRandomNeighbor(alien.CurrentCity)
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
+				err = a.ctrl.MoveAlienToCity(alien.ID, nextCity.Name)
+				if err != nil {
+					fmt.Println(err)
+				}
+			}
+		}
+
+		// Print the current state of the app
+		fmt.Println("=====================================")
+		a.PrintState()
+	}
+
+	// Indicate that the main loop has finished by closing the channel
+	close(a.done)
 }
 
 func (a *App) PrintState() {

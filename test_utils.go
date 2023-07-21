@@ -5,8 +5,8 @@ func NewDummyApp() *App {
 		WorldMap: &Map{
 			Cities: make(map[string]*City),
 		},
-		Aliens:         make([]*Alien, 4),
-		AlienLocations: make(map[*City][]*Alien),
+		Aliens:         make(AlienSet),
+		AlienLocations: make(map[*City]AlienSet),
 		done:           make(chan struct{}),
 	}
 
@@ -17,10 +17,10 @@ func NewDummyApp() *App {
 	app.Aliens[3] = &Alien{ID: 3, Moved: 0}
 
 	cities := []*City{
-		&City{Name: "A"},
-		&City{Name: "B"},
-		&City{Name: "C"},
-		&City{Name: "D"},
+		{Name: "A"},
+		{Name: "B"},
+		{Name: "C"},
+		{Name: "D"},
 	}
 
 	// Create cities.
@@ -54,16 +54,16 @@ func NewDummyApp() *App {
 		"east": cities[2],
 	}
 
-	app.AlienLocations[cities[0]] = []*Alien{app.Aliens[0]}
+	app.AlienLocations[cities[0]] = AlienSet{0: app.Aliens[0]}
 	app.Aliens[0].CurrentCity = cities[0]
 
-	app.AlienLocations[cities[1]] = []*Alien{app.Aliens[1]}
+	app.AlienLocations[cities[1]] = AlienSet{1: app.Aliens[1]}
 	app.Aliens[1].CurrentCity = cities[1]
 
-	app.AlienLocations[cities[2]] = []*Alien{app.Aliens[2]}
+	app.AlienLocations[cities[2]] = AlienSet{2: app.Aliens[2]}
 	app.Aliens[2].CurrentCity = cities[2]
 
-	app.AlienLocations[cities[3]] = []*Alien{app.Aliens[3]}
+	app.AlienLocations[cities[3]] = AlienSet{3: app.Aliens[3]}
 	app.Aliens[3].CurrentCity = cities[3]
 
 	app.ctrl = NewController(app)
@@ -72,8 +72,8 @@ func NewDummyApp() *App {
 
 func NewEmptyDummyApp() *App {
 	app := &App{}
-	app.Aliens = make([]*Alien, 0)
+	app.Aliens = make(AlienSet)
 	app.WorldMap = &Map{Cities: make(map[string]*City)}
-	app.AlienLocations = make(map[*City][]*Alien)
+	app.AlienLocations = make(map[*City]AlienSet)
 	return app
 }

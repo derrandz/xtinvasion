@@ -11,16 +11,15 @@ func NewController(app *App) *Controller {
 }
 
 func (cc *Controller) DestroyAlien(alienID int) error {
-	if alienID < 0 || alienID >= len(cc.app.Aliens) {
-		return fmt.Errorf("Invalid alien ID.")
+	if alienID < 0 {
+		return fmt.Errorf("invalid alien ID")
 	}
 
-	alien := cc.app.Aliens[alienID]
-	if alien != nil {
-		aliensInCity := cc.app.AlienLocations[alien.CurrentCity]
-		aliensInCity = append(aliensInCity[:findAlienIndex(aliensInCity, alienID)], aliensInCity[findAlienIndex(aliensInCity, alienID)+1:]...)
-		cc.app.AlienLocations[alien.CurrentCity] = aliensInCity
-		cc.app.Aliens[alienID] = nil
+	if alien, exists := cc.app.Aliens[alienID]; !exists {
+		return fmt.Errorf("alien %d does not exist", alienID)
+	} else {
+		delete(cc.app.AlienLocations[alien.CurrentCity], alienID)
+		delete(cc.app.Aliens, alienID)
 	}
 
 	return nil
@@ -40,7 +39,15 @@ func (cc *Controller) DestroyCity(cityName string) error {
 
 	fmt.Println(msg)
 
+	delete(cc.app.AlienLocations, city)
 	delete(cc.app.WorldMap.Cities, cityName)
+	for _, neighbour := range city.Neighbours {
+		for dir, neighbourNeighbour := range neighbour.Neighbours {
+			if neighbourNeighbour.Name == cityName {
+				delete(neighbour.Neighbours, dir)
+			}
+		}
+	}
 	return nil
 }
 
@@ -52,14 +59,12 @@ func (cc *Controller) DestroyCity(cityName string) error {
 // Checking for whether the alien is already in the city is omitted to ease up testing
 // and such case would be avoided thanks to the caller's logic
 func (cc *Controller) MoveAlienToCity(alienID int, cityName string) error {
-	fmt.Println("MoveAlienToCity", alienID, cityName)
-	if alienID < 0 || alienID >= len(cc.app.Aliens) {
+	if alienID < 0 {
 		return fmt.Errorf("invalid alien ID")
 	}
 
-	fmt.Println("app.Aliens", cc.app.Aliens, alienID)
-	alien := cc.app.Aliens[alienID]
-	if alien == nil {
+	alien, found := cc.app.Aliens[alienID]
+	if !found {
 		return fmt.Errorf("alien %d does not exist", alienID)
 	}
 
@@ -73,19 +78,16 @@ func (cc *Controller) MoveAlienToCity(alienID int, cityName string) error {
 	}
 
 	// Move the alien
-	aliensInCity, found := cc.app.AlienLocations[alien.CurrentCity]
+	_, found = cc.app.AlienLocations[alien.CurrentCity]
 	if !found {
 		return fmt.Errorf("alien %d is not in city %s", alienID, alien.CurrentCity.Name)
 	}
 
-	fmt.Println("Here?")
-	aliensInCity = append(aliensInCity[:findAlienIndex(aliensInCity, alienID)], aliensInCity[findAlienIndex(aliensInCity, alienID)+1:]...)
-	cc.app.AlienLocations[alien.CurrentCity] = aliensInCity
-	cc.app.AlienLocations[nextCity] = append(cc.app.AlienLocations[nextCity], alien)
+	delete(cc.app.AlienLocations[alien.CurrentCity], alienID)
 	alien.CurrentCity = nextCity
 	alien.Moved++
+	cc.app.AlienLocations[nextCity][alien.ID] = alien
 
-	fmt.Println("Final")
 	return nil
 }
 
@@ -105,6 +107,15 @@ func (cc *Controller) IsWorldDestroyed() bool {
 func (cc *Controller) IsAlienMovementLimitReached() bool {
 	for _, alien := range cc.app.Aliens {
 		if alien != nil && alien.Moved < 10000 {
+			return false
+		}
+	}
+	return true
+}
+
+func (cc *Controller) AreRemainingAliensTrapped() bool {
+	for _, alien := range cc.app.Aliens {
+		if alien != nil && len(alien.CurrentCity.Neighbours) > 0 {
 			return false
 		}
 	}
