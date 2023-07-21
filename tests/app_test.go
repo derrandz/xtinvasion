@@ -15,10 +15,10 @@ import (
 // D west=B east=C
 func TestReadMapFromFile(t *testing.T) {
 	app := NewEmptyDummyApp()
-	err := app.ReadMapFromFile("nofile.txt")
+	err := app.IOController().ReadMapFromFile("nofile.txt")
 	require.NotNil(t, err)
 
-	err = app.ReadMapFromFile("test_map.txt")
+	err = app.IOController().ReadMapFromFile("test_map.txt")
 	require.Nil(t, err)
 
 	assert.Equal(t, 4, len(app.WorldMap.Cities), "Expected 4 cities, got", len(app.WorldMap.Cities))

@@ -19,7 +19,7 @@ run:
 
 # Run the program with a specific number of aliens (e.g., 20)
 run-with-aliens:
-	$(GO) run cmd/main.go start --aliens=$(num) --file=./data/map.txt
+	$(GO) run cmd/main.go start --aliens=$(num) --input=./data/map.txt
 
 test:
 	$(GO) test ./tests/...

@@ -17,7 +17,7 @@ type DummyAppConfig struct {
 func NewDummyApp(cfg *DummyAppConfig) *simulation.App {
 	app := simulation.NewApp()
 
-	app.MaxMoves = cfg.MaxMoves
+	app.Cfg.MaxMoves = cfg.MaxMoves
 	app.Aliens = make(simulation.AlienSet)
 	app.AlienLocations = make(map[*simulation.City]simulation.AlienSet)
 	app.WorldMap = &simulation.Map{Cities: make(map[string]*simulation.City)}
@@ -60,6 +60,7 @@ func NewEmptyDummyApp() *simulation.App {
 	app.AlienLocations = make(map[*simulation.City]simulation.AlienSet)
 
 	app.SetStateController(simulation.NewStateController(app))
+	app.SetIOController(simulation.NewIOController(app))
 	app.SetLogger(logger.NewStdoutLogger())
 
 	return app

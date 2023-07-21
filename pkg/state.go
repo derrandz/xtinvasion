@@ -112,7 +112,7 @@ func (sc *StateController) IsAlienMovementLimitReached() bool {
 	for _, alien := range sc.app.Aliens {
 		if alien.IsTrapped() {
 			trapped++
-		} else if alien != nil && alien.Moved < sc.app.MaxMoves {
+		} else if alien != nil && alien.Moved < sc.app.Cfg.MaxMoves {
 			return false
 		}
 	}

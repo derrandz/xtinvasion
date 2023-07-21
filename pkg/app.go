@@ -1,10 +1,8 @@
 package simulation
 
 import (
-	"bufio"
 	"fmt"
 	"math/rand"
-	"os"
 	"strings"
 	"sync/atomic"
 
@@ -13,11 +11,21 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type App struct {
-	logger    *logger.Logger
-	stateCtrl *StateController
+type AppCfg struct {
+	MaxMoves      int
+	MapInputFile  string
+	LogFile       string
+	MapOutputFile string
+}
 
-	MaxMoves       int
+type App struct {
+	logger *logger.Logger
+
+	stateCtrl *StateController
+	ioCtrl    *IOController
+
+	Cfg *AppCfg
+
 	Aliens         AlienSet
 	AlienLocations map[*City]AlienSet
 	WorldMap       *Map
@@ -58,88 +66,22 @@ func (a *App) PopulateMapWithAliens() {
 	}
 }
 
-func (a *App) ReadMapFromFile(filename string) error {
-	file, err := os.Open(filename)
-	if err != nil {
-		return fmt.Errorf("error opening file: %w", err)
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-
-	// Read and create all cities first
-	for scanner.Scan() {
-		line := scanner.Text()
-		cityData := strings.Split(line, " ")
-
-		if len(cityData) < 2 {
-			return fmt.Errorf("invalid line: %s", line)
-		}
-
-		cityName := cityData[0]
-
-		city := &City{Name: cityName, Neighbours: make(map[string]*City)}
-		a.WorldMap.Cities[cityName] = city
-	}
-
-	// Reset scanner to start again from the beginning
-	file.Seek(0, 0)
-	scanner = bufio.NewScanner(file)
-
-	// Populate neighboring cities
-	for scanner.Scan() {
-		line := scanner.Text()
-		cityData := strings.Split(line, " ")
-
-		if len(cityData) < 2 {
-			return fmt.Errorf("invalid line: %s", line)
-		}
-
-		cityName := cityData[0]
-		cityNeighbours := cityData[1:]
-
-		city := a.WorldMap.Cities[cityName]
-
-		for _, neighbourData := range cityNeighbours {
-			neighbour := strings.Split(neighbourData, "=")
-			if len(neighbour) != 2 {
-				return fmt.Errorf("invalid neighbour data: %s", neighbourData)
-			}
-
-			neighbourName := neighbour[1]
-			direction := neighbour[0]
-
-			if destCity, found := a.WorldMap.Cities[neighbourName]; !found {
-				return fmt.Errorf("neighbour city %s not found for %s", neighbourName, cityName)
-			} else {
-				city.Neighbours[direction] = destCity
-				destCity.Neighbours[oppositeDirection(direction)] = city
-			}
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("error reading file: %w", err)
-	}
-
-	a.logger.Log("Map read successfully.")
-	a.logger.Logf("Cities: %d", len(a.WorldMap.Cities))
-
-	return nil
-}
-
 func (a *App) DefineFlags(cmd *cobra.Command) {
 	cmd.Flags().IntP("aliens", "a", 5, "Number of aliens")
-	cmd.Flags().StringP("file", "f", "data/map.txt", "Map file")
-	cmd.Flags().StringP("log", "l", "output/stdout.log", "Log file")
+	cmd.Flags().IntP("max_moves", "m", 10000, "Max number of moves allowed for each alien")
+	cmd.Flags().StringP("input", "i", "data/map.txt", "Map input file")
+	cmd.Flags().StringP("output", "l", "output/map.txt", "Map output file")
+	cmd.Flags().StringP("log", "o", "output/stdout.log", "Log file")
 }
 
 func (a *App) parseFlags(cmd *cobra.Command) []any {
 	numAliens, _ := cmd.Flags().GetInt("aliens")
-	filename, _ := cmd.Flags().GetString("file")
+	maxMoves, _ := cmd.Flags().GetInt("max_moves")
+	inputFilename, _ := cmd.Flags().GetString("input")
+	outputFilename, _ := cmd.Flags().GetString("output")
 	logfile, _ := cmd.Flags().GetString("log")
 
-	return []any{numAliens, filename, logfile}
+	return []any{numAliens, maxMoves, inputFilename, outputFilename, logfile}
 }
 
 func (a *App) Init(cmd *cobra.Command) {
@@ -149,13 +91,19 @@ func (a *App) Init(cmd *cobra.Command) {
 	// Read the map from the file and create the cities
 	flags := a.parseFlags(cmd)
 
-	// Initialize the logger
-	logfile := flags[2].(string)
+	// store configuration
+	a.Cfg = &AppCfg{
+		MaxMoves:      flags[1].(int),
+		MapInputFile:  flags[2].(string),
+		MapOutputFile: flags[3].(string),
+		LogFile:       flags[4].(string),
+	}
 
-	if logfile == "" {
+	// Initialize the logger
+	if a.Cfg.LogFile == "" {
 		a.logger = logger.NewStdoutLogger()
 	} else {
-		if loggr, err := logger.NewFileLogger(logfile); err != nil {
+		if loggr, err := logger.NewFileLogger(a.Cfg.LogFile); err != nil {
 			fmt.Printf("error creating logger: %v", err)
 			panic(err)
 		} else {
@@ -163,16 +111,19 @@ func (a *App) Init(cmd *cobra.Command) {
 		}
 	}
 
+	// Initialize the state and io controllers
+	a.stateCtrl = &StateController{app: a}
+	a.ioCtrl = &IOController{app: a}
+
 	// Initialize the map and aliens (state)
 	numAliens := flags[0].(int)
-	filename := flags[1].(string)
 
 	a.Aliens = make(AlienSet, numAliens)
 	a.WorldMap = &Map{Cities: make(map[string]*City)}
 	a.AlienLocations = make(map[*City]AlienSet)
 
 	// Read the map from the file and create the cities
-	if err := a.ReadMapFromFile(filename); err != nil {
+	if err := a.ioCtrl.ReadMapFromFile(a.Cfg.MapInputFile); err != nil {
 		a.logger.Logf("error: %v", err)
 		panic(err)
 	}
@@ -182,9 +133,6 @@ func (a *App) Init(cmd *cobra.Command) {
 
 	// Populate the alien locations
 	a.PopulateMapWithAliens()
-
-	// Initialize the queryStateController and commandStateController
-	a.stateCtrl = &StateController{app: a}
 }
 
 func (a *App) Run() {
@@ -236,38 +184,6 @@ func (a *App) Run() {
 	close(a.done)
 }
 
-func (a *App) PrintState() {
-	a.logger.Log("Remaining Cities:")
-	for _, city := range a.WorldMap.Cities {
-		a.logger.Logf("%s ", city.Name)
-		if len(city.Neighbours) > 0 {
-			a.logger.Logf("connecting to %v", city.Neighbours)
-			var neighbours []string
-			for _, neighbour := range city.Neighbours {
-				if neighbour == nil {
-					a.logger.Log("warning: nil neighbour in state!")
-					continue
-				}
-				neighbours = append(neighbours, neighbour.Name)
-			}
-			a.logger.Logf("%s\n", strings.Join(neighbours, ", "))
-		} else {
-			a.logger.Logf("isolated\n")
-		}
-	}
-
-	a.logger.Log("\nRemaining Aliens:")
-	if len(a.Aliens) > 0 {
-		for _, alien := range a.Aliens {
-			if alien != nil {
-				a.logger.Logf("Alien %d at %s, moved %d times\n", alien.ID, alien.CurrentCity.Name, alien.Moved)
-			}
-		}
-	} else {
-		a.logger.Log("No aliens left.")
-	}
-}
-
 func (a *App) Stop() {
 	atomic.StoreInt32(&a.isStopped, 1)
 }
@@ -277,6 +193,11 @@ func (a *App) Wait() {
 	<-a.done
 }
 
+func (a *App) SaveResult() {
+	a.ioCtrl.WriteMapToFile()
+	a.ioCtrl.PrintResult()
+}
+
 func (a *App) IsStopped() bool {
 	return atomic.LoadInt32(&a.isStopped) == 1
 }
@@ -284,15 +205,27 @@ func (a *App) IsStopped() bool {
 func (a *App) Start(cmd *cobra.Command, args []string) {
 	a.Init(cmd)
 	a.Run()
-	a.PrintState()
+	a.SaveResult()
 }
 
+// Setter for testing
 func (a *App) SetStateController(stateCtrl *StateController) {
 	a.stateCtrl = stateCtrl
 }
 
+// Getter for testing
 func (a *App) StateController() *StateController {
 	return a.stateCtrl
+}
+
+// Getter for testing
+func (a *App) IOController() *IOController {
+	return a.ioCtrl
+}
+
+// Setter for testing
+func (a *App) SetIOController(ioCtrl *IOController) {
+	a.ioCtrl = ioCtrl
 }
 
 func (a *App) SetLogger(logger *logger.Logger) {
@@ -301,9 +234,9 @@ func (a *App) SetLogger(logger *logger.Logger) {
 
 func NewApp() *App {
 	app := &App{
-		MaxMoves:  10000,
 		done:      make(chan struct{}),
 		isStopped: 0,
+		Cfg:       &AppCfg{},
 	}
 	return app
 }
