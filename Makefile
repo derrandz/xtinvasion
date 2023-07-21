@@ -1,34 +1,37 @@
 # Define variables
 GO := go
 BINARY_NAME := xtinvasion
+PROJECTNAME := $(shell basename "$(PWD)")
 
 # Default target: build the program
 all: build
 
-# Build the program
+## build: Build the program
 build:
 	$(GO) build cmd/main.go -o ./build/$(BINARY_NAME)
 
-# Clean the build
+## clean: Clean the build
 clean:
 	rm -f $(BINARY_NAME)
 
-# Run the program with default number of aliens (10)
-run:
-	$(GO) run cmd/main.go --aliens=10 --file=map.txt
+## start: Run the program with the specified number of aliens, input file, log file, and output file
+start:
+	$(GO) run cmd/main.go start --aliens=$(aliens) --input=$(input) --log=$(log) --output=$(output)
 
-# Run the program with a specific number of aliens (e.g., 20)
-run-with-aliens:
-	$(GO) run cmd/main.go start --aliens=$(num) --input=./data/map.txt
+## start-help: Print simulation help
+make start-help:
+	$(GO) run cmd/main.go start --help
 
+## test: Run the program with default number of aliens (10)
 test:
 	$(GO) test ./tests/...
 
-# Help target: print available targets
-help:
-	@echo "Available targets:"
-	@echo "  make build        - Build the program"
-	@echo "  make clean        - Clean the build"
-	@echo "  make run          - Run the program with default number of aliens (10)"
-	@echo "  make run-with-aliens num=20  - Run the program with a specific number of aliens (e.g., 20)"
-	@echo "  make help         - Print available targets"
+## godoc: Run godoc server
+godoc:
+	godoc -http=:6060
+
+## help: Get more info on make commands.
+helpo: Makefile
+	@echo " Choose a command run in "$(PROJECTNAME)":"
+	@sed -n 's/^##//p' $< | column -t -s ':' |  sed -e 's/^/ /'
+.PHONY: help
