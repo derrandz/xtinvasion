@@ -1,13 +1,15 @@
 package main
 
-import "xtinvasion/logger"
+import (
+	"xtinvasion/logger"
+)
 
 // DummyAppConfig is a dummy config for testing.
 type DummyAppConfig struct {
 	AlienCount     int
 	MaxMoves       int
 	Map            map[string][]interface{} // [cityName, [{direction, neighbour1}, {direction, neighbour2}, ...]
-	AlienLocations map[string]int
+	AlienLocations map[string][]int
 }
 
 // NewDummyApp(cfg *DummyAppConfig) *App creates a dummy app for testing.
@@ -38,9 +40,12 @@ func NewDummyApp(cfg *DummyAppConfig) *App {
 		}
 	}
 
-	for city, alienID := range cfg.AlienLocations {
-		app.AlienLocations[app.WorldMap.Cities[city]] = AlienSet{alienID: app.Aliens[alienID]}
-		app.Aliens[alienID].CurrentCity = app.WorldMap.Cities[city]
+	for city, alienIDs := range cfg.AlienLocations {
+		app.AlienLocations[app.WorldMap.Cities[city]] = AlienSet{}
+		for _, id := range alienIDs {
+			app.Aliens[id].CurrentCity = app.WorldMap.Cities[city]
+			app.AlienLocations[app.WorldMap.Cities[city]][id] = app.Aliens[id]
+		}
 	}
 
 	app.ctrl = NewController(app)

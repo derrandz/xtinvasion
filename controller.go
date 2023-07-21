@@ -112,12 +112,16 @@ func (cc *Controller) IsAlienMovementLimitReached() bool {
 		return false
 	}
 
+	trapped := 0
 	for _, alien := range cc.app.Aliens {
-		if alien != nil && !alien.IsTrapped() && alien.Moved < cc.app.MaxMoves {
+		if alien.IsTrapped() {
+			trapped++
+		} else if alien != nil && alien.Moved < cc.app.MaxMoves {
 			return false
 		}
 	}
-	return true
+
+	return trapped != len(cc.app.Aliens)
 }
 
 func (cc *Controller) AreRemainingAliensTrapped() bool {

@@ -42,11 +42,11 @@ var (
 				map[string]string{"east": "C"},
 			},
 		},
-		AlienLocations: map[string]int{
-			"A": 0,
-			"B": 1,
-			"C": 2,
-			"D": 3,
+		AlienLocations: map[string][]int{
+			"A": {0},
+			"B": {1},
+			"C": {2},
+			"D": {3},
 		},
 	}
 )
@@ -146,6 +146,7 @@ func TestCtrl_AreAllAliensDestroyed(t *testing.T) {
 
 	areAllAliensDestroyed = controller.AreAllAliensDestroyed()
 	assert.True(t, areAllAliensDestroyed)
+	assert.True(t, len(controller.app.Aliens) == 0)
 }
 
 func TestCtrl_IsAlienMovementLimitReached(t *testing.T) {
@@ -192,9 +193,9 @@ func TestCtrl_IsAlienMovementLimitReached(t *testing.T) {
 				},
 				"D": []interface{}{},
 			},
-			AlienLocations: map[string]int{
-				"A": 0,
-				"D": 1,
+			AlienLocations: map[string][]int{
+				"A": {0},
+				"D": {1},
 			},
 		}
 		app := NewDummyApp(appCfg)
@@ -231,13 +232,16 @@ func TestCtrl_IsWorldDestroyed(t *testing.T) {
 	}
 
 	isWorldDestroyed = controller.IsWorldDestroyed()
+
 	assert.True(t, isWorldDestroyed)
+	assert.True(t, len(controller.app.WorldMap.Cities) == 0)
+	assert.True(t, len(controller.app.AlienLocations) == 0)
+	assert.True(t, len(controller.app.Aliens) == 0)
 }
 
 func TestCtrl_AreRemainingAliensTrapped(t *testing.T) {
-	app := NewDummyApp(dummyAppCfg)
-
 	t.Run("Single alien trapped", func(t *testing.T) {
+		app := NewDummyApp(dummyAppCfg)
 		areRemainingAliensTrapped := app.ctrl.AreRemainingAliensTrapped()
 		assert.False(t, areRemainingAliensTrapped)
 
@@ -251,28 +255,29 @@ func TestCtrl_AreRemainingAliensTrapped(t *testing.T) {
 
 		areRemainingAliensTrapped = app.ctrl.AreRemainingAliensTrapped()
 		assert.True(t, areRemainingAliensTrapped)
+		assert.True(t, len(app.WorldMap.Cities) > 0)
 	})
-
-	appCfg := &DummyAppConfig{
-		AlienCount: 4,
-		MaxMoves:   500,
-		Map: map[string][]interface{}{
-			"A": []interface{}{},
-			"B": []interface{}{},
-			"C": []interface{}{},
-			"D": []interface{}{},
-		},
-		AlienLocations: map[string]int{
-			"A": 0,
-			"B": 1,
-			"C": 2,
-			"D": 3,
-		},
-	}
-
-	app = NewDummyApp(appCfg)
 	t.Run("Multiple aliens trapped", func(t *testing.T) {
+		appCfg := &DummyAppConfig{
+			AlienCount: 4,
+			MaxMoves:   500,
+			Map: map[string][]interface{}{
+				"A": []interface{}{},
+				"B": []interface{}{},
+				"C": []interface{}{},
+				"D": []interface{}{},
+			},
+			AlienLocations: map[string][]int{
+				"A": {0},
+				"B": {1},
+				"C": {2},
+				"D": {3},
+			},
+		}
+		app := NewDummyApp(appCfg)
 		areRemainingAliensTrapped := app.ctrl.AreRemainingAliensTrapped()
+
 		assert.True(t, areRemainingAliensTrapped)
+		assert.True(t, len(app.WorldMap.Cities) > 0)
 	})
 }
