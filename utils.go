@@ -20,6 +20,9 @@ func getRandomNeighbor(city *City) (*City, error) {
 	i := 0
 	for neighbour := range city.Neighbours {
 		if i == index {
+			if city.Neighbours[neighbour] == nil {
+				return nil, fmt.Errorf("getRandomNeighbor: city %s has a nil neighbour", city.Name)
+			}
 			return city.Neighbours[neighbour], nil
 		}
 		i++
@@ -42,15 +45,6 @@ func oppositeDirection(direction string) string {
 	default:
 		return ""
 	}
-}
-
-func findAlienIndex(aliens []*Alien, alienID int) int {
-	for i, alien := range aliens {
-		if alien != nil && alien.ID == alienID {
-			return i
-		}
-	}
-	return -1
 }
 
 func removeSliceElement[T any](slice []T, index int) []T {

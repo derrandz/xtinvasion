@@ -28,6 +28,9 @@ type Alien struct {
 }
 
 func (a *Alien) IsTrapped() bool {
+	if a.CurrentCity == nil {
+		panic("alien is not in any city")
+	}
 	return len(a.CurrentCity.Neighbours) == 0
 }
 
@@ -267,6 +270,10 @@ func (a *App) PrintState() {
 			a.logger.Logf("connecting to %v", city.Neighbours)
 			var neighbours []string
 			for _, neighbour := range city.Neighbours {
+				if neighbour == nil {
+					a.logger.Log("warning: nil neighbour in state!")
+					continue
+				}
 				neighbours = append(neighbours, neighbour.Name)
 			}
 			a.logger.Logf("%s\n", strings.Join(neighbours, ", "))

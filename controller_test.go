@@ -110,6 +110,11 @@ func TestCtrl_MoveAlienToNextCity(t *testing.T) {
 	err = controller.MoveAlienToNextCity(alien)
 	require.NotNil(t, err)
 
+	// move alien when alien's city has a nil neighbour
+	alien.CurrentCity.Neighbours = map[string]*City{"north": nil}
+	err = controller.MoveAlienToNextCity(alien)
+	require.NotNil(t, err)
+
 	// move alien when alien's city has neighbours but neighbour does not exist in app's world map
 	// move alien
 	newCity.Neighbours = map[string]*City{"north": {Name: "Asgard"}}
@@ -144,69 +149,72 @@ func TestCtrl_AreAllAliensDestroyed(t *testing.T) {
 }
 
 func TestCtrl_IsAlienMovementLimitReached(t *testing.T) {
-	app := NewDummyApp(dummyAppCfg)
-	controller := NewController(app)
+	t.Run("No trapped aliens", func(t *testing.T) {
 
-	isAlienMvmtReached := controller.IsAlienMovementLimitReached()
-	assert.False(t, isAlienMvmtReached)
+		app := NewDummyApp(dummyAppCfg)
+		controller := NewController(app)
 
-	// Move all aliens 10,000 times.
-	for i := 0; i < 500; i++ {
-		controller.MoveAlienToNextCity(app.Aliens[0])
-		controller.MoveAlienToNextCity(app.Aliens[1])
-		controller.MoveAlienToNextCity(app.Aliens[2])
-		controller.MoveAlienToNextCity(app.Aliens[3])
-	}
+		isAlienMvmtReached := controller.IsAlienMovementLimitReached()
+		assert.False(t, isAlienMvmtReached)
 
-	isAlienMvmtReached = controller.IsAlienMovementLimitReached()
-	assert.True(t, isAlienMvmtReached)
-}
+		// Move all aliens 10,000 times.
+		for i := 0; i < 500; i++ {
+			controller.MoveAlienToNextCity(app.Aliens[0])
+			controller.MoveAlienToNextCity(app.Aliens[1])
+			controller.MoveAlienToNextCity(app.Aliens[2])
+			controller.MoveAlienToNextCity(app.Aliens[3])
+		}
 
-func TestCtrl_IsAlienMovementLimitReached_SomeTrappedAliens(t *testing.T) {
-	// This config creates a map
-	// with 4 cities and 2 aliens.
-	// Alien0 is free to move from CityA to CityB to CityC
-	// Alien1 is trapped in CityD
-	// With this config, the movement limit should be reached if alien0 has reached it
-	// discarding the movement limit for Alien1 because it's trapped
-	appCfg := &DummyAppConfig{
-		AlienCount: 2,
-		MaxMoves:   500,
-		Map: map[string][]interface{}{
-			"A": []interface{}{
-				map[string]string{"north": "B"},
-				map[string]string{"south": "C"},
+		isAlienMvmtReached = controller.IsAlienMovementLimitReached()
+		assert.True(t, isAlienMvmtReached)
+	})
+
+	t.Run("Some aliens are trapped", func(t *testing.T) {
+		// This config creates a map
+		// with 4 cities and 2 aliens.
+		// Alien0 is free to move from CityA to CityB to CityC
+		// Alien1 is trapped in CityD
+		// With this config, the movement limit should be reached if alien0 has reached it
+		// discarding the movement limit for Alien1 because it's trapped
+		appCfg := &DummyAppConfig{
+			AlienCount: 2,
+			MaxMoves:   500,
+			Map: map[string][]interface{}{
+				"A": []interface{}{
+					map[string]string{"north": "B"},
+					map[string]string{"south": "C"},
+				},
+				"B": []interface{}{
+					map[string]string{"south": "A"},
+				},
+				"C": []interface{}{
+					map[string]string{"north": "A"},
+				},
+				"D": []interface{}{},
 			},
-			"B": []interface{}{
-				map[string]string{"south": "A"},
+			AlienLocations: map[string]int{
+				"A": 0,
+				"D": 1,
 			},
-			"C": []interface{}{
-				map[string]string{"north": "A"},
-			},
-			"D": []interface{}{},
-		},
-		AlienLocations: map[string]int{
-			"A": 0,
-			"D": 1,
-		},
-	}
-	app := NewDummyApp(appCfg)
-	controller := NewController(app)
+		}
+		app := NewDummyApp(appCfg)
+		controller := NewController(app)
 
-	isAlienMvmtReached := controller.IsAlienMovementLimitReached()
-	assert.False(t, isAlienMvmtReached)
+		isAlienMvmtReached := controller.IsAlienMovementLimitReached()
+		assert.False(t, isAlienMvmtReached)
 
-	// Move all aliens 10,000 times.
-	for i := 0; i < 500; i++ {
-		err := controller.MoveAlienToNextCity(app.Aliens[0])
-		require.Nil(t, err)
+		// Move all aliens 10,000 times.
+		for i := 0; i < 500; i++ {
+			err := controller.MoveAlienToNextCity(app.Aliens[0])
+			require.Nil(t, err)
 
-		err = controller.MoveAlienToNextCity(app.Aliens[1]) // won't move, will return error
-		require.NotNil(t, err)
-	}
+			err = controller.MoveAlienToNextCity(app.Aliens[1]) // won't move, will return error
+			require.NotNil(t, err)
+		}
 
-	isAlienMvmtReached = controller.IsAlienMovementLimitReached()
-	assert.True(t, isAlienMvmtReached)
+		isAlienMvmtReached = controller.IsAlienMovementLimitReached()
+		assert.True(t, isAlienMvmtReached)
+	})
 }
 
 func TestCtrl_IsWorldDestroyed(t *testing.T) {
@@ -224,4 +232,47 @@ func TestCtrl_IsWorldDestroyed(t *testing.T) {
 
 	isWorldDestroyed = controller.IsWorldDestroyed()
 	assert.True(t, isWorldDestroyed)
+}
+
+func TestCtrl_AreRemainingAliensTrapped(t *testing.T) {
+	app := NewDummyApp(dummyAppCfg)
+
+	t.Run("Single alien trapped", func(t *testing.T) {
+		areRemainingAliensTrapped := app.ctrl.AreRemainingAliensTrapped()
+		assert.False(t, areRemainingAliensTrapped)
+
+		// Destroy all cities except one.
+		for _, city := range app.WorldMap.Cities {
+			if city.Name != "A" {
+				err := app.ctrl.DestroyCity(city.Name)
+				require.Nil(t, err)
+			}
+		}
+
+		areRemainingAliensTrapped = app.ctrl.AreRemainingAliensTrapped()
+		assert.True(t, areRemainingAliensTrapped)
+	})
+
+	appCfg := &DummyAppConfig{
+		AlienCount: 4,
+		MaxMoves:   500,
+		Map: map[string][]interface{}{
+			"A": []interface{}{},
+			"B": []interface{}{},
+			"C": []interface{}{},
+			"D": []interface{}{},
+		},
+		AlienLocations: map[string]int{
+			"A": 0,
+			"B": 1,
+			"C": 2,
+			"D": 3,
+		},
+	}
+
+	app = NewDummyApp(appCfg)
+	t.Run("Multiple aliens trapped", func(t *testing.T) {
+		areRemainingAliensTrapped := app.ctrl.AreRemainingAliensTrapped()
+		assert.True(t, areRemainingAliensTrapped)
+	})
 }

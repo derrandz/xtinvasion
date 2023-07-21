@@ -108,6 +108,10 @@ func (cc *Controller) IsWorldDestroyed() bool {
 }
 
 func (cc *Controller) IsAlienMovementLimitReached() bool {
+	if len(cc.app.Aliens) == 0 {
+		return false
+	}
+
 	for _, alien := range cc.app.Aliens {
 		if alien != nil && !alien.IsTrapped() && alien.Moved < cc.app.MaxMoves {
 			return false
@@ -117,8 +121,12 @@ func (cc *Controller) IsAlienMovementLimitReached() bool {
 }
 
 func (cc *Controller) AreRemainingAliensTrapped() bool {
+	if len(cc.app.Aliens) == 0 {
+		return false
+	}
+
 	for _, alien := range cc.app.Aliens {
-		if alien != nil && len(alien.CurrentCity.Neighbours) > 0 {
+		if alien != nil && !alien.IsTrapped() {
 			return false
 		}
 	}

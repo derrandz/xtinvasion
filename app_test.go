@@ -83,37 +83,68 @@ func TestPopulateMapWithAliens(t *testing.T) {
 	}
 }
 
-func TestRun(t *testing.T) {
-	app := NewDummyApp(dummyAppCfg)
-
-	app.Aliens[4] = &Alien{ID: 4, CurrentCity: app.WorldMap.Cities["A"]}
-	app.Aliens[5] = &Alien{ID: 5, CurrentCity: app.WorldMap.Cities["B"]}
-	app.Aliens[6] = &Alien{ID: 6, CurrentCity: app.WorldMap.Cities["B"]}
-	app.Aliens[7] = &Alien{ID: 7, CurrentCity: app.WorldMap.Cities["C"]}
-	app.Aliens[8] = &Alien{ID: 8, CurrentCity: app.WorldMap.Cities["D"]}
-
-	app.Run()
-
-	// assert.Equal(t, 0, len(app.Aliens)) // implement nil filtering, for now it's going to break
-	assert.True(t,
-		app.ctrl.AreAllAliensDestroyed() || app.ctrl.IsWorldDestroyed() || app.ctrl.IsAlienMovementLimitReached() || app.ctrl.AreRemainingAliensTrapped(),
-	)
-
-	if app.ctrl.AreAllAliensDestroyed() {
-		assert.Equal(t, 0, len(app.Aliens))
-		for _, aliens := range app.AlienLocations {
-			assert.Equal(t, 0, len(aliens))
+func TestApp_Run(t *testing.T) {
+	t.Run("All aliens get destroyed but part of the world remains", func(t *testing.T) {
+		cfg := &DummyAppConfig{
+			AlienCount: 4,
+			MaxMoves:   500,
+			Map: map[string][]interface{}{
+				"A": []interface{}{
+					map[string]string{"north": "B"},
+					map[string]string{"south": "C"},
+				},
+				"B": []interface{}{
+					map[string]string{"east": "D"},
+					map[string]string{"south": "A"},
+				},
+				"C": []interface{}{
+					map[string]string{"north": "A"},
+					map[string]string{"west": "D"},
+				},
+				"D": []interface{}{
+					map[string]string{"west": "B"},
+					map[string]string{"east": "C"},
+				},
+			},
+			AlienLocations: map[string]int{
+				"A": 0,
+				"B": 1,
+				"C": 2,
+				"D": 3,
+			},
 		}
-	} else if app.ctrl.IsWorldDestroyed() {
-		assert.Equal(t, 0, len(app.WorldMap.Cities))
-		assert.Equal(t, 0, len(app.AlienLocations))
-	} else if app.ctrl.IsAlienMovementLimitReached() {
-		assert.NotEqual(t, 0, len(app.AlienLocations))
-		assert.NotEqual(t, 0, len(app.WorldMap.Cities))
-		assert.NotEqual(t, 0, len(app.Aliens))
-	} else if app.ctrl.AreRemainingAliensTrapped() {
-		assert.NotEqual(t, 0, len(app.AlienLocations))
-		assert.NotEqual(t, 0, len(app.WorldMap.Cities))
-		assert.NotEqual(t, 0, len(app.Aliens))
-	}
+		app := NewDummyApp(cfg)
+		app.Run()
+		assert.True(t, app.ctrl.AreAllAliensDestroyed())
+		assert.False(t, app.ctrl.IsWorldDestroyed())
+		assert.False(t, app.ctrl.IsAlienMovementLimitReached())
+		assert.False(t, app.ctrl.AreRemainingAliensTrapped())
+	})
+	t.Run("All aliens get destroyed and the world is destroyed", func(t *testing.T) {})
+	t.Run("Aliens reach the maximum number of moves", func(t *testing.T) {})
+	t.Run("Aliens get trapped", func(t *testing.T) {})
+
+	// app.Run()
+
+	// assert.True(t,
+	// 	app.ctrl.AreAllAliensDestroyed() || app.ctrl.IsWorldDestroyed() || app.ctrl.IsAlienMovementLimitReached() || app.ctrl.AreRemainingAliensTrapped(),
+	// )
+
+	// if app.ctrl.AreAllAliensDestroyed() {
+	// 	assert.Equal(t, 0, len(app.Aliens))
+	// 	for _, aliens := range app.AlienLocations {
+	// 		assert.Equal(t, 0, len(aliens))
+	// 	}
+	// } else if app.ctrl.IsWorldDestroyed() {
+	// 	assert.Equal(t, 0, len(app.WorldMap.Cities))
+	// 	assert.Equal(t, 0, len(app.AlienLocations))
+	// } else if app.ctrl.IsAlienMovementLimitReached() {
+	// 	assert.NotEqual(t, 0, len(app.AlienLocations))
+	// 	assert.NotEqual(t, 0, len(app.WorldMap.Cities))
+	// 	assert.NotEqual(t, 0, len(app.Aliens))
+	// } else if app.ctrl.AreRemainingAliensTrapped() {
+	// 	assert.NotEqual(t, 0, len(app.AlienLocations))
+	// 	assert.NotEqual(t, 0, len(app.WorldMap.Cities))
+	// 	assert.NotEqual(t, 0, len(app.Aliens))
+	// }
 }
