@@ -12,7 +12,7 @@ func getRandomNeighbor(city *City) (*City, error) {
 	}
 
 	if len(city.Neighbours) == 0 {
-		return nil, fmt.Errorf("getRandomNeighbor: city %s has no neighbours", city.Name)
+		return nil, fmt.Errorf("getRandomNeighbor: city has no neighbours or neighbours have been destroyed. city=%s", city.Name)
 	}
 
 	rand.Seed(time.Now().UnixNano())

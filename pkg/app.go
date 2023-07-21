@@ -13,30 +13,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type City struct {
-	Name       string
-	Neighbours map[string]*City
-}
-
-type Map struct {
-	Cities map[string]*City
-}
-
-type Alien struct {
-	ID          int
-	CurrentCity *City
-	Moved       int
-}
-
-func (a *Alien) IsTrapped() bool {
-	if a.CurrentCity == nil {
-		panic("alien is not in any city")
-	}
-	return len(a.CurrentCity.Neighbours) == 0
-}
-
-type AlienSet map[int]*Alien
-
 type App struct {
 	logger    *logger.Logger
 	stateCtrl *StateController
@@ -249,7 +225,7 @@ func (a *App) Run() {
 		for _, alien := range a.Aliens {
 			if alien != nil {
 				err := a.stateCtrl.MoveAlienToNextCity(alien)
-				if err != nil {
+				if err != nil && !strings.Contains(err.Error(), "getRandomNeighbor: city has no neighbours") {
 					a.logger.Logf("error: %v", err)
 				}
 			}
