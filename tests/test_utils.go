@@ -1,8 +1,8 @@
 package tests
 
 import (
-	logger "github.com/derrandz/xtinvasion/logger"
 	simulation "github.com/derrandz/xtinvasion/pkg"
+	logger "github.com/derrandz/xtinvasion/pkg/logger"
 )
 
 // DummyAppConfig is a dummy config for testing.
@@ -47,7 +47,7 @@ func NewDummyApp(cfg *DummyAppConfig) *simulation.App {
 		}
 	}
 
-	app.SetController(simulation.NewController(app))
+	app.SetStateController(simulation.NewStateController(app))
 	app.SetLogger(logger.NewStdoutLogger())
 
 	return app
@@ -59,7 +59,7 @@ func NewEmptyDummyApp() *simulation.App {
 	app.WorldMap = &simulation.Map{Cities: make(map[string]*simulation.City)}
 	app.AlienLocations = make(map[*simulation.City]simulation.AlienSet)
 
-	app.SetController(simulation.NewController(app))
+	app.SetStateController(simulation.NewStateController(app))
 	app.SetLogger(logger.NewStdoutLogger())
 
 	return app

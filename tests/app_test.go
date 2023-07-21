@@ -115,7 +115,7 @@ func TestApp_Run(t *testing.T) {
 		}
 
 		app := NewDummyApp(cfg)
-		ctrl := app.Controller()
+		ctrl := app.StateController()
 
 		app.Run()
 
@@ -142,7 +142,7 @@ func TestApp_Run(t *testing.T) {
 			},
 		}
 		app := NewDummyApp(cfg)
-		ctrl := app.Controller()
+		ctrl := app.StateController()
 
 		app.Run()
 
@@ -176,7 +176,7 @@ func TestApp_Run(t *testing.T) {
 		}
 
 		app := NewDummyApp(cfg)
-		ctrl := app.Controller()
+		ctrl := app.StateController()
 
 		app.Run()
 
@@ -199,7 +199,7 @@ func TestApp_Run(t *testing.T) {
 			},
 		}
 		app := NewDummyApp(cfg)
-		ctrl := app.Controller()
+		ctrl := app.StateController()
 
 		app.Run()
 

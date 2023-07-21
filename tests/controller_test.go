@@ -53,7 +53,7 @@ var (
 
 func TestCtrl_DestroyAlien(t *testing.T) {
 	app := NewDummyApp(dummyAppCfg)
-	ctrl := app.Controller()
+	ctrl := app.StateController()
 
 	// Destroy an alien that exists.
 	err := ctrl.DestroyAlien(0)
@@ -67,7 +67,7 @@ func TestCtrl_DestroyAlien(t *testing.T) {
 
 func TestCtrl_DestroyCity(t *testing.T) {
 	app := NewDummyApp(dummyAppCfg)
-	ctrl := app.Controller()
+	ctrl := app.StateController()
 
 	// Destroy a city that doesn't exist.
 	err := ctrl.DestroyCity("Atlantis")
@@ -82,7 +82,7 @@ func TestCtrl_DestroyCity(t *testing.T) {
 
 func TestCtrl_MoveAlienToNextCity(t *testing.T) {
 	app := NewDummyApp(dummyAppCfg)
-	ctrl := app.Controller()
+	ctrl := app.StateController()
 
 	// move ailen when nil
 	err := ctrl.MoveAlienToNextCity(nil)
@@ -131,7 +131,7 @@ func TestCtrl_MoveAlienToNextCity(t *testing.T) {
 
 func TestCtrl_AreAllAliensDestroyed(t *testing.T) {
 	app := NewDummyApp(dummyAppCfg)
-	ctrl := app.Controller()
+	ctrl := app.StateController()
 
 	areAllAliensDestroyed := ctrl.AreAllAliensDestroyed()
 	assert.False(t, areAllAliensDestroyed)
@@ -150,7 +150,7 @@ func TestCtrl_AreAllAliensDestroyed(t *testing.T) {
 func TestCtrl_IsAlienMovementLimitReached(t *testing.T) {
 	t.Run("No trapped aliens", func(t *testing.T) {
 		app := NewDummyApp(dummyAppCfg)
-		ctrl := app.Controller()
+		ctrl := app.StateController()
 
 		isAlienMvmtReached := ctrl.IsAlienMovementLimitReached()
 		assert.False(t, isAlienMvmtReached)
@@ -196,7 +196,7 @@ func TestCtrl_IsAlienMovementLimitReached(t *testing.T) {
 			},
 		}
 		app := NewDummyApp(appCfg)
-		ctrl := app.Controller()
+		ctrl := app.StateController()
 
 		isAlienMvmtReached := ctrl.IsAlienMovementLimitReached()
 		assert.False(t, isAlienMvmtReached)
@@ -217,7 +217,7 @@ func TestCtrl_IsAlienMovementLimitReached(t *testing.T) {
 
 func TestCtrl_IsWorldDestroyed(t *testing.T) {
 	app := NewDummyApp(dummyAppCfg)
-	ctrl := app.Controller()
+	ctrl := app.StateController()
 
 	isWorldDestroyed := ctrl.IsWorldDestroyed()
 	assert.False(t, isWorldDestroyed)
@@ -239,7 +239,7 @@ func TestCtrl_IsWorldDestroyed(t *testing.T) {
 func TestCtrl_AreRemainingAliensTrapped(t *testing.T) {
 	t.Run("Single alien trapped", func(t *testing.T) {
 		app := NewDummyApp(dummyAppCfg)
-		ctrl := app.Controller()
+		ctrl := app.StateController()
 
 		areRemainingAliensTrapped := ctrl.AreRemainingAliensTrapped()
 		assert.False(t, areRemainingAliensTrapped)
@@ -274,7 +274,7 @@ func TestCtrl_AreRemainingAliensTrapped(t *testing.T) {
 			},
 		}
 		app := NewDummyApp(appCfg)
-		ctrl := app.Controller()
+		ctrl := app.StateController()
 
 		areRemainingAliensTrapped := ctrl.AreRemainingAliensTrapped()
 

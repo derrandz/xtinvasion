@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/derrandz/xtinvasion/logger"
+	"github.com/derrandz/xtinvasion/pkg/logger"
 
 	"github.com/spf13/cobra"
 )
@@ -38,8 +38,8 @@ func (a *Alien) IsTrapped() bool {
 type AlienSet map[int]*Alien
 
 type App struct {
-	logger *logger.Logger
-	ctrl   *Controller
+	logger    *logger.Logger
+	stateCtrl *StateController
 
 	MaxMoves       int
 	Aliens         AlienSet
@@ -207,8 +207,8 @@ func (a *App) Init(cmd *cobra.Command) {
 	// Populate the alien locations
 	a.PopulateMapWithAliens()
 
-	// Initialize the queryController and commandController
-	a.ctrl = &Controller{app: a}
+	// Initialize the queryStateController and commandStateController
+	a.stateCtrl = &StateController{app: a}
 }
 
 func (a *App) Run() {
@@ -219,18 +219,18 @@ func (a *App) Run() {
 		}
 
 		// Check if all aliens have been destroyed
-		if a.ctrl.AreAllAliensDestroyed() {
+		if a.stateCtrl.AreAllAliensDestroyed() {
 			a.logger.Log("All aliens have been destroyed.")
 			break
 		}
 
 		// Check if all aliens have moved 10,000 times
-		if a.ctrl.IsAlienMovementLimitReached() {
+		if a.stateCtrl.IsAlienMovementLimitReached() {
 			a.logger.Log("All aliens have moved 10,000 times.")
 			break
 		}
 
-		if a.ctrl.AreRemainingAliensTrapped() {
+		if a.stateCtrl.AreRemainingAliensTrapped() {
 			a.logger.Log("All remaining aliens are trapped.")
 			break
 		}
@@ -238,7 +238,7 @@ func (a *App) Run() {
 		// Check if any city has two or more aliens and destroy them
 		for city := range a.AlienLocations {
 			if len(a.AlienLocations[city]) > 1 {
-				err := a.ctrl.DestroyCity(city.Name)
+				err := a.stateCtrl.DestroyCity(city.Name)
 				if err != nil {
 					a.logger.Logf("error: %v", err)
 				}
@@ -248,7 +248,7 @@ func (a *App) Run() {
 		// Move aliens around in the map
 		for _, alien := range a.Aliens {
 			if alien != nil {
-				err := a.ctrl.MoveAlienToNextCity(alien)
+				err := a.stateCtrl.MoveAlienToNextCity(alien)
 				if err != nil {
 					a.logger.Logf("error: %v", err)
 				}
@@ -307,12 +307,12 @@ func (a *App) Start(cmd *cobra.Command, args []string) {
 	a.PrintState()
 }
 
-func (a *App) SetController(ctrl *Controller) {
-	a.ctrl = ctrl
+func (a *App) SetStateController(stateCtrl *StateController) {
+	a.stateCtrl = stateCtrl
 }
 
-func (a *App) Controller() *Controller {
-	return a.ctrl
+func (a *App) StateController() *StateController {
+	return a.stateCtrl
 }
 
 func (a *App) SetLogger(logger *logger.Logger) {

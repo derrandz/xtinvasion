@@ -22,7 +22,7 @@ func (l *Logger) Log(message string) {
 }
 
 func (l *Logger) Logf(format string, args ...interface{}) {
-	fmt.Fprintf(l.output, format, args...)
+	fmt.Fprintf(l.output, format+"\n", args...)
 }
 
 func NewFileLogger(filename string) (*Logger, error) {
