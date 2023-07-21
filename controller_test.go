@@ -8,8 +8,51 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	// Cities:
+	// CityA north=CityB south=CityC
+	// CityB east=CityD south=CityA
+	// CityC north=CityA west=CityD
+	// CityD west=CityB east=CityC
+	//
+	// Aliens:
+	// Alien0 in CityA
+	// Alien1 in CityB
+	// Alien2 in CityC
+	// Alien3 in CityD
+
+	dummyAppCfg = &DummyAppConfig{
+		AlienCount: 4,
+		MaxMoves:   500,
+		Map: map[string][]interface{}{
+			"A": []interface{}{
+				map[string]string{"north": "B"},
+				map[string]string{"south": "C"},
+			},
+			"B": []interface{}{
+				map[string]string{"east": "D"},
+				map[string]string{"south": "A"},
+			},
+			"C": []interface{}{
+				map[string]string{"north": "A"},
+				map[string]string{"west": "D"},
+			},
+			"D": []interface{}{
+				map[string]string{"west": "B"},
+				map[string]string{"east": "C"},
+			},
+		},
+		AlienLocations: map[string]int{
+			"A": 0,
+			"B": 1,
+			"C": 2,
+			"D": 3,
+		},
+	}
+)
+
 func TestCtrl_DestroyAlien(t *testing.T) {
-	app := NewDummyApp()
+	app := NewDummyApp(dummyAppCfg)
 	controller := NewController(app)
 
 	// Destroy an alien that exists.
@@ -23,7 +66,7 @@ func TestCtrl_DestroyAlien(t *testing.T) {
 }
 
 func TestCtrl_DestroyCity(t *testing.T) {
-	app := NewDummyApp()
+	app := NewDummyApp(dummyAppCfg)
 	controller := NewController(app)
 
 	// Destroy a city that doesn't exist.
@@ -38,7 +81,7 @@ func TestCtrl_DestroyCity(t *testing.T) {
 }
 
 func TestCtrl_MoveAlienToCity(t *testing.T) {
-	app := NewDummyApp()
+	app := NewDummyApp(dummyAppCfg)
 	controller := NewController(app)
 
 	// Move alien with ID that's not valid
@@ -60,7 +103,7 @@ func TestCtrl_MoveAlienToCity(t *testing.T) {
 }
 
 func TestCtrl_AreAllAliensDestroyed(t *testing.T) {
-	app := NewDummyApp()
+	app := NewDummyApp(dummyAppCfg)
 	controller := NewController(app)
 
 	areAllAliensDestroyed := controller.AreAllAliensDestroyed()
@@ -79,7 +122,7 @@ func TestCtrl_AreAllAliensDestroyed(t *testing.T) {
 }
 
 func TestCtrl_IsAlienMovementLimitReached(t *testing.T) {
-	app := NewDummyApp()
+	app := NewDummyApp(dummyAppCfg)
 	controller := NewController(app)
 
 	isAlienMvmtReached := controller.IsAlienMovementLimitReached()
@@ -98,7 +141,7 @@ func TestCtrl_IsAlienMovementLimitReached(t *testing.T) {
 }
 
 func TestCtrl_IsWorldDestroyed(t *testing.T) {
-	app := NewDummyApp()
+	app := NewDummyApp(dummyAppCfg)
 	controller := NewController(app)
 
 	isWorldDestroyed := controller.IsWorldDestroyed()

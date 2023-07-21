@@ -15,11 +15,11 @@ clean:
 
 # Run the program with default number of aliens (10)
 run:
-	$(GO) run main.go --aliens=10 --file=map.txt
+	$(GO) run . --aliens=10 --file=map.txt
 
 # Run the program with a specific number of aliens (e.g., 20)
 run-with-aliens:
-	$(GO) run main.go start --aliens=$(num) --file=map.txt
+	$(GO) run . start --aliens=$(num) --file=map.txt
 
 test:
 	$(GO) test ./...

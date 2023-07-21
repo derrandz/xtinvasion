@@ -65,7 +65,7 @@ func TestReadMapFromFile(t *testing.T) {
 
 func TestPopulateMapWithAliens(t *testing.T) {
 	app := NewEmptyDummyApp()
-	prefilledApp := NewDummyApp()
+	prefilledApp := NewDummyApp(dummyAppCfg)
 
 	app.Aliens = prefilledApp.Aliens
 	app.WorldMap = prefilledApp.WorldMap
@@ -84,7 +84,7 @@ func TestPopulateMapWithAliens(t *testing.T) {
 }
 
 func TestRun(t *testing.T) {
-	app := NewDummyApp()
+	app := NewDummyApp(dummyAppCfg)
 
 	app.Aliens[4] = &Alien{ID: 4, CurrentCity: app.WorldMap.Cities["A"]}
 	app.Aliens[5] = &Alien{ID: 5, CurrentCity: app.WorldMap.Cities["B"]}

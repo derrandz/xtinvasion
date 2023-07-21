@@ -21,7 +21,6 @@ func main() {
 
 	// Define flags
 	app.DefineFlags(startCmd)
-
 	rootCmd.AddCommand(startCmd)
 
 	if err := rootCmd.Execute(); err != nil {

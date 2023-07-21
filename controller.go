@@ -86,7 +86,11 @@ func (cc *Controller) MoveAlienToCity(alienID int, cityName string) error {
 	delete(cc.app.AlienLocations[alien.CurrentCity], alienID)
 	alien.CurrentCity = nextCity
 	alien.Moved++
-	cc.app.AlienLocations[nextCity][alien.ID] = alien
+	if nextCityAliens, found := cc.app.AlienLocations[nextCity]; found {
+		nextCityAliens[alien.ID] = alien
+	} else {
+		cc.app.AlienLocations[nextCity] = AlienSet{alien.ID: alien}
+	}
 
 	return nil
 }

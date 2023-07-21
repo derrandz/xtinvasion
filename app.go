@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"sync/atomic"
+	"xtinvasion/logger"
 
 	"github.com/spf13/cobra"
 )
@@ -29,7 +30,8 @@ type Alien struct {
 type AlienSet map[int]*Alien
 
 type App struct {
-	ctrl *Controller
+	logger *logger.Logger
+	ctrl   *Controller
 
 	Aliens         AlienSet
 	AlienLocations map[*City]AlienSet
@@ -44,7 +46,6 @@ func (a *App) createAliens(numAliens int) {
 		alien := &Alien{ID: i, Moved: 0}
 		a.Aliens[i] = alien
 	}
-	fmt.Println("Created", numAliens, "aliens.", a.Aliens)
 }
 
 func (a *App) populateMapWithAliens() {
@@ -75,8 +76,9 @@ func (a *App) getRandomCity() *City {
 func (a *App) parseFlags(cmd *cobra.Command) []any {
 	numAliens, _ := cmd.Flags().GetInt("aliens")
 	filename, _ := cmd.Flags().GetString("file")
+	logfile, _ := cmd.Flags().GetString("log")
 
-	return []any{numAliens, filename}
+	return []any{numAliens, filename, logfile}
 }
 
 func (a *App) readMapFromFile(filename string) error {
@@ -94,8 +96,7 @@ func (a *App) readMapFromFile(filename string) error {
 		cityData := strings.Split(line, " ")
 
 		if len(cityData) < 2 {
-			fmt.Printf("Invalid line: %s\n", line)
-			continue
+			return fmt.Errorf("invalid line: %s", line)
 		}
 
 		cityName := cityData[0]
@@ -114,8 +115,7 @@ func (a *App) readMapFromFile(filename string) error {
 		cityData := strings.Split(line, " ")
 
 		if len(cityData) < 2 {
-			fmt.Printf("Invalid line: %s\n", line)
-			continue
+			return fmt.Errorf("invalid line: %s", line)
 		}
 
 		cityName := cityData[0]
@@ -126,15 +126,14 @@ func (a *App) readMapFromFile(filename string) error {
 		for _, neighbourData := range cityNeighbours {
 			neighbour := strings.Split(neighbourData, "=")
 			if len(neighbour) != 2 {
-				fmt.Printf("Invalid neighbour data: %s\n", neighbourData)
-				continue
+				return fmt.Errorf("invalid neighbour data: %s", neighbourData)
 			}
 
 			neighbourName := neighbour[1]
 			direction := neighbour[0]
 
 			if destCity, found := a.WorldMap.Cities[neighbourName]; !found {
-				fmt.Printf("Neighbour city %s not found for %s\n", neighbourName, cityName)
+				return fmt.Errorf("neighbour city %s not found for %s", neighbourName, cityName)
 			} else {
 				city.Neighbours[direction] = destCity
 				destCity.Neighbours[oppositeDirection(direction)] = city
@@ -146,8 +145,8 @@ func (a *App) readMapFromFile(filename string) error {
 		return fmt.Errorf("error reading file: %w", err)
 	}
 
-	fmt.Println("Map read successfully.")
-	fmt.Println("Cities:", len(a.WorldMap.Cities))
+	a.logger.Log("Map read successfully.")
+	a.logger.Logf("Cities: %d", len(a.WorldMap.Cities))
 
 	return nil
 }
@@ -155,6 +154,7 @@ func (a *App) readMapFromFile(filename string) error {
 func (a *App) DefineFlags(cmd *cobra.Command) {
 	cmd.Flags().IntP("aliens", "a", 5, "Number of aliens")
 	cmd.Flags().StringP("file", "f", "map.txt", "Map file")
+	cmd.Flags().StringP("log", "l", "stdout.log", "Log file")
 }
 
 func (a *App) Init(cmd *cobra.Command) {
@@ -164,6 +164,21 @@ func (a *App) Init(cmd *cobra.Command) {
 	// Read the map from the file and create the cities
 	flags := a.parseFlags(cmd)
 
+	// Initialize the logger
+	logfile := flags[2].(string)
+
+	if logfile == "" {
+		a.logger = logger.NewStdoutLogger()
+	} else {
+		if loggr, err := logger.NewFileLogger(logfile); err != nil {
+			fmt.Printf("error creating logger: %v", err)
+			panic(err)
+		} else {
+			a.logger = loggr
+		}
+	}
+
+	// Initialize the map and aliens (state)
 	numAliens := flags[0].(int)
 	filename := flags[1].(string)
 
@@ -172,7 +187,10 @@ func (a *App) Init(cmd *cobra.Command) {
 	a.AlienLocations = make(map[*City]AlienSet)
 
 	// Read the map from the file and create the cities
-	a.readMapFromFile(filename)
+	if err := a.readMapFromFile(filename); err != nil {
+		a.logger.Logf("error: %v", err)
+		panic(err)
+	}
 
 	// Create aliens and assign them to cities
 	a.createAliens(numAliens)
@@ -185,7 +203,6 @@ func (a *App) Init(cmd *cobra.Command) {
 }
 
 func (a *App) Run() {
-	a.PrintState()
 	for {
 		// Check if the app has been stopped
 		if atomic.LoadInt32(&a.isStopped) == 1 {
@@ -194,18 +211,18 @@ func (a *App) Run() {
 
 		// Check if all aliens have been destroyed
 		if a.ctrl.AreAllAliensDestroyed() {
-			fmt.Println("All aliens have been destroyed.")
+			a.logger.Log("All aliens have been destroyed.")
 			break
 		}
 
 		// Check if all aliens have moved 10,000 times
 		if a.ctrl.IsAlienMovementLimitReached() {
-			fmt.Println("All aliens have moved 10,000 times.")
+			a.logger.Log("All aliens have moved 10,000 times.")
 			break
 		}
 
 		if a.ctrl.AreRemainingAliensTrapped() {
-			fmt.Println("All remaining aliens are trapped.")
+			a.logger.Log("All remaining aliens are trapped.")
 			break
 		}
 
@@ -214,7 +231,7 @@ func (a *App) Run() {
 			if len(a.AlienLocations[city]) > 1 {
 				err := a.ctrl.DestroyCity(city.Name)
 				if err != nil {
-					fmt.Println(err)
+					a.logger.Logf("error: %v", err)
 				}
 			}
 		}
@@ -224,18 +241,17 @@ func (a *App) Run() {
 			if alien != nil {
 				nextCity, err := getRandomNeighbor(alien.CurrentCity)
 				if err != nil {
-					fmt.Println(err)
+					a.logger.Logf("error: %v", err)
 					continue
 				}
 				err = a.ctrl.MoveAlienToCity(alien.ID, nextCity.Name)
 				if err != nil {
-					fmt.Println(err)
+					a.logger.Logf("error: %v", err)
 				}
 			}
 		}
 
-		// Print the current state of the app
-		fmt.Println("=====================================")
+		a.logger.Log("=========================================")
 		a.PrintState()
 	}
 
@@ -244,30 +260,30 @@ func (a *App) Run() {
 }
 
 func (a *App) PrintState() {
-	fmt.Println("Remaining Cities:")
+	a.logger.Log("Remaining Cities:")
 	for _, city := range a.WorldMap.Cities {
-		fmt.Printf("%s ", city.Name)
+		a.logger.Logf("%s ", city.Name)
 		if len(city.Neighbours) > 0 {
-			fmt.Printf("connecting to %v", city.Neighbours)
+			a.logger.Logf("connecting to %v", city.Neighbours)
 			var neighbours []string
 			for _, neighbour := range city.Neighbours {
 				neighbours = append(neighbours, neighbour.Name)
 			}
-			fmt.Printf("%s\n", strings.Join(neighbours, ", "))
+			a.logger.Logf("%s\n", strings.Join(neighbours, ", "))
 		} else {
-			fmt.Printf("isolated\n")
+			a.logger.Logf("isolated\n")
 		}
 	}
 
-	fmt.Println("\nRemaining Aliens:")
+	a.logger.Log("\nRemaining Aliens:")
 	if len(a.Aliens) > 0 {
 		for _, alien := range a.Aliens {
 			if alien != nil {
-				fmt.Printf("Alien %d at %s, moved %d times\n", alien.ID, alien.CurrentCity.Name, alien.Moved)
+				a.logger.Logf("Alien %d at %s, moved %d times\n", alien.ID, alien.CurrentCity.Name, alien.Moved)
 			}
 		}
 	} else {
-		fmt.Println("No aliens left.")
+		a.logger.Log("No aliens left.")
 	}
 }
 

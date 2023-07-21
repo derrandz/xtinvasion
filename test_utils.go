@@ -1,72 +1,49 @@
 package main
 
-func NewDummyApp() *App {
+import "xtinvasion/logger"
+
+// DummyAppConfig is a dummy config for testing.
+type DummyAppConfig struct {
+	AlienCount     int
+	MaxMoves       int
+	Map            map[string][]interface{} // [cityName, [{direction, neighbour1}, {direction, neighbour2}, ...]
+	AlienLocations map[string]int
+}
+
+// NewDummyApp(cfg *DummyAppConfig) *App creates a dummy app for testing.
+func NewDummyApp(cfg *DummyAppConfig) *App {
 	app := &App{
-		WorldMap: &Map{
-			Cities: make(map[string]*City),
-		},
 		Aliens:         make(AlienSet),
 		AlienLocations: make(map[*City]AlienSet),
+		WorldMap:       &Map{Cities: make(map[string]*City)},
+		isStopped:      0,
 		done:           make(chan struct{}),
 	}
 
-	// Create aliens.
-	app.Aliens[0] = &Alien{ID: 0, Moved: 0}
-	app.Aliens[1] = &Alien{ID: 1, Moved: 0}
-	app.Aliens[2] = &Alien{ID: 2, Moved: 0}
-	app.Aliens[3] = &Alien{ID: 3, Moved: 0}
-
-	cities := []*City{
-		{Name: "A"},
-		{Name: "B"},
-		{Name: "C"},
-		{Name: "D"},
+	for i := 0; i < cfg.AlienCount; i++ {
+		app.Aliens[i] = &Alien{ID: i, Moved: 0}
 	}
 
-	// Create cities.
-	//
-	// CityA north=CityB south=CityC
-	// CityB east=CityD south=CityA
-	// CityC north=CityA west=CityD
-	// CityD west=CityB east=CityC
-
-	app.WorldMap.Cities["A"] = cities[0]
-	app.WorldMap.Cities["A"].Neighbours = map[string]*City{
-		"north": cities[1],
-		"south": cities[2],
+	for city := range cfg.Map {
+		app.WorldMap.Cities[city] = &City{Name: city, Neighbours: make(map[string]*City)}
 	}
 
-	app.WorldMap.Cities["B"] = cities[1]
-	app.WorldMap.Cities["B"].Neighbours = map[string]*City{
-		"east":  cities[3],
-		"south": cities[0],
+	for city, neighbours := range cfg.Map {
+		for _, neighbour := range neighbours {
+			neighbourCity := neighbour.(map[string]string)
+			for direction, neighbourName := range neighbourCity {
+				app.WorldMap.Cities[city].Neighbours[direction] = app.WorldMap.Cities[neighbourName]
+			}
+		}
 	}
 
-	app.WorldMap.Cities["C"] = cities[2]
-	app.WorldMap.Cities["C"].Neighbours = map[string]*City{
-		"north": cities[0],
-		"west":  cities[3],
+	for city, alienID := range cfg.AlienLocations {
+		app.AlienLocations[app.WorldMap.Cities[city]] = AlienSet{alienID: app.Aliens[alienID]}
+		app.Aliens[alienID].CurrentCity = app.WorldMap.Cities[city]
 	}
-
-	app.WorldMap.Cities["D"] = cities[3]
-	app.WorldMap.Cities["D"].Neighbours = map[string]*City{
-		"west": cities[1],
-		"east": cities[2],
-	}
-
-	app.AlienLocations[cities[0]] = AlienSet{0: app.Aliens[0]}
-	app.Aliens[0].CurrentCity = cities[0]
-
-	app.AlienLocations[cities[1]] = AlienSet{1: app.Aliens[1]}
-	app.Aliens[1].CurrentCity = cities[1]
-
-	app.AlienLocations[cities[2]] = AlienSet{2: app.Aliens[2]}
-	app.Aliens[2].CurrentCity = cities[2]
-
-	app.AlienLocations[cities[3]] = AlienSet{3: app.Aliens[3]}
-	app.Aliens[3].CurrentCity = cities[3]
 
 	app.ctrl = NewController(app)
+	app.logger = logger.NewStdoutLogger()
 	return app
 }
 
@@ -75,5 +52,7 @@ func NewEmptyDummyApp() *App {
 	app.Aliens = make(AlienSet)
 	app.WorldMap = &Map{Cities: make(map[string]*City)}
 	app.AlienLocations = make(map[*City]AlienSet)
+	app.ctrl = NewController(app)
+	app.logger = logger.NewStdoutLogger()
 	return app
 }
