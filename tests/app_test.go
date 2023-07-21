@@ -1,4 +1,4 @@
-package main
+package tests
 
 import (
 	"testing"
@@ -14,10 +14,10 @@ import (
 // D west=B east=C
 func TestReadMapFromFile(t *testing.T) {
 	app := NewEmptyDummyApp()
-	err := app.readMapFromFile("nofile.txt")
+	err := app.ReadMapFromFile("nofile.txt")
 	require.NotNil(t, err)
 
-	err = app.readMapFromFile("test_map.txt")
+	err = app.ReadMapFromFile("test_map.txt")
 	require.Nil(t, err)
 
 	assert.Equal(t, 4, len(app.WorldMap.Cities), "Expected 4 cities, got", len(app.WorldMap.Cities))
@@ -70,7 +70,7 @@ func TestPopulateMapWithAliens(t *testing.T) {
 	app.Aliens = prefilledApp.Aliens
 	app.WorldMap = prefilledApp.WorldMap
 
-	app.populateMapWithAliens()
+	app.PopulateMapWithAliens()
 
 	populatedCities := len(app.AlienLocations)
 	assert.LessOrEqual(t, populatedCities, len(app.WorldMap.Cities))
@@ -115,12 +115,14 @@ func TestApp_Run(t *testing.T) {
 		}
 
 		app := NewDummyApp(cfg)
+		ctrl := app.Controller()
+
 		app.Run()
 
-		assert.True(t, app.ctrl.AreAllAliensDestroyed())
-		assert.False(t, app.ctrl.IsWorldDestroyed())
-		assert.False(t, app.ctrl.IsAlienMovementLimitReached())
-		assert.False(t, app.ctrl.AreRemainingAliensTrapped())
+		assert.True(t, ctrl.AreAllAliensDestroyed())
+		assert.False(t, ctrl.IsWorldDestroyed())
+		assert.False(t, ctrl.IsAlienMovementLimitReached())
+		assert.False(t, ctrl.AreRemainingAliensTrapped())
 	})
 	t.Run("All aliens get destroyed and the world is destroyed", func(t *testing.T) {
 		cfg := &DummyAppConfig{
@@ -140,11 +142,14 @@ func TestApp_Run(t *testing.T) {
 			},
 		}
 		app := NewDummyApp(cfg)
+		ctrl := app.Controller()
+
 		app.Run()
-		assert.True(t, app.ctrl.AreAllAliensDestroyed())
-		assert.True(t, app.ctrl.IsWorldDestroyed())
-		assert.False(t, app.ctrl.IsAlienMovementLimitReached())
-		assert.False(t, app.ctrl.AreRemainingAliensTrapped())
+
+		assert.True(t, ctrl.AreAllAliensDestroyed())
+		assert.True(t, ctrl.IsWorldDestroyed())
+		assert.False(t, ctrl.IsAlienMovementLimitReached())
+		assert.False(t, ctrl.AreRemainingAliensTrapped())
 	})
 	t.Run("Aliens reach the maximum number of moves", func(t *testing.T) {
 		cfg := &DummyAppConfig{
@@ -169,12 +174,16 @@ func TestApp_Run(t *testing.T) {
 				"C": {1},
 			},
 		}
+
 		app := NewDummyApp(cfg)
+		ctrl := app.Controller()
+
 		app.Run()
-		assert.False(t, app.ctrl.AreAllAliensDestroyed())
-		assert.False(t, app.ctrl.IsWorldDestroyed())
-		assert.True(t, app.ctrl.IsAlienMovementLimitReached())
-		assert.False(t, app.ctrl.AreRemainingAliensTrapped())
+
+		assert.False(t, ctrl.AreAllAliensDestroyed())
+		assert.False(t, ctrl.IsWorldDestroyed())
+		assert.True(t, ctrl.IsAlienMovementLimitReached())
+		assert.False(t, ctrl.AreRemainingAliensTrapped())
 	})
 	t.Run("Aliens get trapped", func(t *testing.T) {
 		cfg := &DummyAppConfig{
@@ -190,10 +199,13 @@ func TestApp_Run(t *testing.T) {
 			},
 		}
 		app := NewDummyApp(cfg)
+		ctrl := app.Controller()
+
 		app.Run()
-		assert.False(t, app.ctrl.AreAllAliensDestroyed())
-		assert.False(t, app.ctrl.IsWorldDestroyed())
-		assert.False(t, app.ctrl.IsAlienMovementLimitReached())
-		assert.True(t, app.ctrl.AreRemainingAliensTrapped())
+
+		assert.False(t, ctrl.AreAllAliensDestroyed())
+		assert.False(t, ctrl.IsWorldDestroyed())
+		assert.False(t, ctrl.IsAlienMovementLimitReached())
+		assert.True(t, ctrl.AreRemainingAliensTrapped())
 	})
 }

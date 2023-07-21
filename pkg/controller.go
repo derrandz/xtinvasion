@@ -1,13 +1,9 @@
-package main
+package simulation
 
 import "fmt"
 
 type Controller struct {
 	app *App
-}
-
-func NewController(app *App) *Controller {
-	return &Controller{app: app}
 }
 
 func (cc *Controller) DestroyAlien(alienID int) error {
@@ -135,4 +131,12 @@ func (cc *Controller) AreRemainingAliensTrapped() bool {
 		}
 	}
 	return true
+}
+
+func (cc *Controller) App() *App {
+	return cc.app
+}
+
+func NewController(app *App) *Controller {
+	return &Controller{app: app}
 }

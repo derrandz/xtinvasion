@@ -1,4 +1,4 @@
-package main
+package simulation
 
 import (
 	"bufio"
@@ -7,7 +7,8 @@ import (
 	"os"
 	"strings"
 	"sync/atomic"
-	"xtinvasion/logger"
+
+	"github.com/derrandz/xtinvasion/logger"
 
 	"github.com/spf13/cobra"
 )
@@ -56,18 +57,6 @@ func (a *App) createAliens(numAliens int) {
 	}
 }
 
-func (a *App) populateMapWithAliens() {
-	for _, alien := range a.Aliens {
-		city := a.getRandomCity()
-		if location, found := a.AlienLocations[city]; found {
-			location[alien.ID] = alien
-		} else {
-			a.AlienLocations[city] = map[int]*Alien{alien.ID: alien}
-		}
-		alien.CurrentCity = city
-	}
-}
-
 func (a *App) getRandomCity() *City {
 	var cities []*City
 	for _, city := range a.WorldMap.Cities {
@@ -81,15 +70,19 @@ func (a *App) getRandomCity() *City {
 	return cities[rand.Intn(len(cities))]
 }
 
-func (a *App) parseFlags(cmd *cobra.Command) []any {
-	numAliens, _ := cmd.Flags().GetInt("aliens")
-	filename, _ := cmd.Flags().GetString("file")
-	logfile, _ := cmd.Flags().GetString("log")
-
-	return []any{numAliens, filename, logfile}
+func (a *App) PopulateMapWithAliens() {
+	for _, alien := range a.Aliens {
+		city := a.getRandomCity()
+		if location, found := a.AlienLocations[city]; found {
+			location[alien.ID] = alien
+		} else {
+			a.AlienLocations[city] = map[int]*Alien{alien.ID: alien}
+		}
+		alien.CurrentCity = city
+	}
 }
 
-func (a *App) readMapFromFile(filename string) error {
+func (a *App) ReadMapFromFile(filename string) error {
 	file, err := os.Open(filename)
 	if err != nil {
 		return fmt.Errorf("error opening file: %w", err)
@@ -161,8 +154,16 @@ func (a *App) readMapFromFile(filename string) error {
 
 func (a *App) DefineFlags(cmd *cobra.Command) {
 	cmd.Flags().IntP("aliens", "a", 5, "Number of aliens")
-	cmd.Flags().StringP("file", "f", "map.txt", "Map file")
-	cmd.Flags().StringP("log", "l", "stdout.log", "Log file")
+	cmd.Flags().StringP("file", "f", "data/map.txt", "Map file")
+	cmd.Flags().StringP("log", "l", "output/stdout.log", "Log file")
+}
+
+func (a *App) parseFlags(cmd *cobra.Command) []any {
+	numAliens, _ := cmd.Flags().GetInt("aliens")
+	filename, _ := cmd.Flags().GetString("file")
+	logfile, _ := cmd.Flags().GetString("log")
+
+	return []any{numAliens, filename, logfile}
 }
 
 func (a *App) Init(cmd *cobra.Command) {
@@ -195,7 +196,7 @@ func (a *App) Init(cmd *cobra.Command) {
 	a.AlienLocations = make(map[*City]AlienSet)
 
 	// Read the map from the file and create the cities
-	if err := a.readMapFromFile(filename); err != nil {
+	if err := a.ReadMapFromFile(filename); err != nil {
 		a.logger.Logf("error: %v", err)
 		panic(err)
 	}
@@ -204,7 +205,7 @@ func (a *App) Init(cmd *cobra.Command) {
 	a.createAliens(numAliens)
 
 	// Populate the alien locations
-	a.populateMapWithAliens()
+	a.PopulateMapWithAliens()
 
 	// Initialize the queryController and commandController
 	a.ctrl = &Controller{app: a}
@@ -253,9 +254,6 @@ func (a *App) Run() {
 				}
 			}
 		}
-
-		a.logger.Log("=========================================")
-		a.PrintState()
 	}
 
 	// Indicate that the main loop has finished by closing the channel
@@ -309,9 +307,23 @@ func (a *App) Start(cmd *cobra.Command, args []string) {
 	a.PrintState()
 }
 
+func (a *App) SetController(ctrl *Controller) {
+	a.ctrl = ctrl
+}
+
+func (a *App) Controller() *Controller {
+	return a.ctrl
+}
+
+func (a *App) SetLogger(logger *logger.Logger) {
+	a.logger = logger
+}
+
 func NewApp() *App {
 	app := &App{
-		MaxMoves: 10000,
+		MaxMoves:  10000,
+		done:      make(chan struct{}),
+		isStopped: 0,
 	}
 	return app
 }

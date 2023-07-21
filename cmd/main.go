@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"os"
 
+	simulation "github.com/derrandz/xtinvasion/pkg"
 	"github.com/spf13/cobra"
 )
 
 func main() {
 	var rootCmd = &cobra.Command{Use: "app"}
 
-	app := NewApp()
+	app := simulation.NewApp()
 
 	// Add a start command
 	var startCmd = &cobra.Command{

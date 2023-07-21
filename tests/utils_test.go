@@ -1,4 +1,4 @@
-package main
+package tests
 
 // func TestFindAlienIndex(t *testing.T) {
 // 	app := NewApp(3, 3)

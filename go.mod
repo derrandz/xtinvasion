@@ -1,4 +1,4 @@
-module xtinvasion
+module github.com/derrandz/xtinvasion
 
 go 1.20
 

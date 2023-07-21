@@ -7,7 +7,7 @@ all: build
 
 # Build the program
 build:
-	$(GO) build -o ./build/$(BINARY_NAME)
+	$(GO) build cmd/main.go -o ./build/$(BINARY_NAME)
 
 # Clean the build
 clean:
@@ -15,14 +15,14 @@ clean:
 
 # Run the program with default number of aliens (10)
 run:
-	$(GO) run . --aliens=10 --file=map.txt
+	$(GO) run cmd/main.go --aliens=10 --file=map.txt
 
 # Run the program with a specific number of aliens (e.g., 20)
 run-with-aliens:
-	$(GO) run . start --aliens=$(num) --file=map.txt
+	$(GO) run cmd/main.go start --aliens=$(num) --file=./data/map.txt
 
 test:
-	$(GO) test ./...
+	$(GO) test ./tests/...
 
 # Help target: print available targets
 help:
