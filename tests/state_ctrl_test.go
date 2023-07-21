@@ -25,19 +25,19 @@ var (
 		AlienCount: 4,
 		MaxMoves:   500,
 		Map: map[string][]interface{}{
-			"A": []interface{}{
+			"A": {
 				map[string]string{"north": "B"},
 				map[string]string{"south": "C"},
 			},
-			"B": []interface{}{
+			"B": {
 				map[string]string{"east": "D"},
 				map[string]string{"south": "A"},
 			},
-			"C": []interface{}{
+			"C": {
 				map[string]string{"north": "A"},
 				map[string]string{"west": "D"},
 			},
-			"D": []interface{}{
+			"D": {
 				map[string]string{"west": "B"},
 				map[string]string{"east": "C"},
 			},
@@ -178,17 +178,17 @@ func TestCtrl_IsAlienMovementLimitReached(t *testing.T) {
 			AlienCount: 2,
 			MaxMoves:   500,
 			Map: map[string][]interface{}{
-				"A": []interface{}{
+				"A": {
 					map[string]string{"north": "B"},
 					map[string]string{"south": "C"},
 				},
-				"B": []interface{}{
+				"B": {
 					map[string]string{"south": "A"},
 				},
-				"C": []interface{}{
+				"C": {
 					map[string]string{"north": "A"},
 				},
-				"D": []interface{}{},
+				"D": {},
 			},
 			AlienLocations: map[string][]int{
 				"A": {0},
@@ -261,10 +261,10 @@ func TestCtrl_AreRemainingAliensTrapped(t *testing.T) {
 			AlienCount: 4,
 			MaxMoves:   500,
 			Map: map[string][]interface{}{
-				"A": []interface{}{},
-				"B": []interface{}{},
-				"C": []interface{}{},
-				"D": []interface{}{},
+				"A": {},
+				"B": {},
+				"C": {},
+				"D": {},
 			},
 			AlienLocations: map[string][]int{
 				"A": {0},

@@ -48,6 +48,7 @@ func NewDummyApp(cfg *DummyAppConfig) *simulation.App {
 	}
 
 	app.SetStateController(simulation.NewStateController(app))
+	app.SetIOController(simulation.NewIOController(app))
 	app.SetLogger(logger.NewStdoutLogger())
 
 	return app
@@ -58,6 +59,7 @@ func NewEmptyDummyApp() *simulation.App {
 	app.Aliens = make(simulation.AlienSet)
 	app.WorldMap = &simulation.Map{Cities: make(map[string]*simulation.City)}
 	app.AlienLocations = make(map[*simulation.City]simulation.AlienSet)
+	app.Cfg = &simulation.AppCfg{}
 
 	app.SetStateController(simulation.NewStateController(app))
 	app.SetIOController(simulation.NewIOController(app))

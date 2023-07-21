@@ -9,12 +9,14 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
+// IOController handles all input and output operations.
 type IOController struct {
 	app *App
 }
 
-func (io *IOController) ReadMapFromFile(filename string) error {
-	file, err := os.Open(filename)
+// ReadMapFromFile reads the world map from a file.
+func (io *IOController) ReadMapFromFile() error {
+	file, err := os.Open(io.app.Cfg.MapInputFile)
 	if err != nil {
 		return fmt.Errorf("error opening file: %w", err)
 	}
@@ -95,7 +97,6 @@ func (io *IOController) WriteMapToFile() error {
 		line := fmt.Sprintf("%s ", cityName)
 		for direction, neighbour := range city.Neighbours {
 			line += fmt.Sprintf("%s=%s", direction, neighbour.Name)
-			line += " "
 		}
 		line += "\n"
 
@@ -153,6 +154,7 @@ func printAliens(aliens AlienSet) {
 	table.Render()
 }
 
+// NewIOController creates a new IOController.
 func NewIOController(app *App) *IOController {
 	return &IOController{app: app}
 }

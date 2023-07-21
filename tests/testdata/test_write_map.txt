@@ -1,0 +1,2 @@
+A north=B
+B south=A

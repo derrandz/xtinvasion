@@ -2,10 +2,13 @@ package simulation
 
 import "fmt"
 
+// StateController handles all state operations.
 type StateController struct {
 	app *App
 }
 
+// DestroyAlien destroys an alien and removes it from the city
+// it is currently in.
 func (sc *StateController) DestroyAlien(alienID int) error {
 	if alienID < 0 {
 		return fmt.Errorf("invalid alien ID")
@@ -21,6 +24,8 @@ func (sc *StateController) DestroyAlien(alienID int) error {
 	return nil
 }
 
+// DestroyCity destroys a city and removes it from the world map
+// as well as it destroys all aliens in the city.
 func (sc *StateController) DestroyCity(cityName string) error {
 	city, found := sc.app.WorldMap.Cities[cityName]
 	if !found {
@@ -90,6 +95,7 @@ func (sc *StateController) MoveAlienToNextCity(alien *Alien) error {
 	return nil
 }
 
+// AreAllAliensDestroyed returns true if all aliens are destroyed.
 func (sc *StateController) AreAllAliensDestroyed() bool {
 	for _, alien := range sc.app.Aliens {
 		if alien != nil {
@@ -99,10 +105,14 @@ func (sc *StateController) AreAllAliensDestroyed() bool {
 	return true
 }
 
+// IsWorldDestroyed returns true if all cities are destroyed.
 func (sc *StateController) IsWorldDestroyed() bool {
 	return len(sc.app.WorldMap.Cities) == 0
 }
 
+// IsAlienMovementLimitReached returns true if all aliens have reached
+// the maximum number of moves.
+// This method does not count trapped aliens.
 func (sc *StateController) IsAlienMovementLimitReached() bool {
 	if len(sc.app.Aliens) == 0 {
 		return false
@@ -120,6 +130,7 @@ func (sc *StateController) IsAlienMovementLimitReached() bool {
 	return trapped != len(sc.app.Aliens)
 }
 
+// AreRemainingAliensTrapped returns true if all remaining aliens are trapped.
 func (sc *StateController) AreRemainingAliensTrapped() bool {
 	if len(sc.app.Aliens) == 0 {
 		return false
@@ -133,10 +144,12 @@ func (sc *StateController) AreRemainingAliensTrapped() bool {
 	return true
 }
 
+// App returns the app.
 func (sc *StateController) App() *App {
 	return sc.app
 }
 
+// NewStateController creates a new state controller.
 func NewStateController(app *App) *StateController {
 	return &StateController{app: app}
 }

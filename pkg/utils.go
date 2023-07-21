@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// getRandomCity returns a random city from the map
 func getRandomNeighbor(city *City) (*City, error) {
 	if city == nil {
 		return nil, fmt.Errorf("getRandomNeighbor: city is nil")
@@ -32,6 +33,8 @@ func getRandomNeighbor(city *City) (*City, error) {
 	return nil, fmt.Errorf("getRandomNeighbor: could not find a random neighbour")
 }
 
+// oppositeDirection returns the opposite direction of the given direction
+// used during map creation
 func oppositeDirection(direction string) string {
 	switch direction {
 	case "north":
@@ -47,6 +50,8 @@ func oppositeDirection(direction string) string {
 	}
 }
 
+// removeSliceElement removes an element from a slice
+// used during state updates
 func removeSliceElement[T any](slice []T, index int) []T {
 	// Check if the index is out of range
 	if index < 0 || index >= len(slice) {

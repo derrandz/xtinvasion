@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// AppCfg is the configuration for the app
 type AppCfg struct {
 	MaxMoves      int
 	MapInputFile  string
@@ -18,6 +19,8 @@ type AppCfg struct {
 	MapOutputFile string
 }
 
+// App is the main application
+// It contains the simulation state and the state and io controllers
 type App struct {
 	logger *logger.Logger
 
@@ -34,6 +37,7 @@ type App struct {
 	done      chan struct{}
 }
 
+// createAliens creates the aliens and stores them in the app
 func (a *App) createAliens(numAliens int) {
 	for i := 0; i < numAliens; i++ {
 		alien := &Alien{ID: i, Moved: 0}
@@ -41,6 +45,7 @@ func (a *App) createAliens(numAliens int) {
 	}
 }
 
+// getRandomCity returns a random city from the map
 func (a *App) getRandomCity() *City {
 	var cities []*City
 	for _, city := range a.WorldMap.Cities {
@@ -54,6 +59,7 @@ func (a *App) getRandomCity() *City {
 	return cities[rand.Intn(len(cities))]
 }
 
+// PopulateMapWithAliens assigns aliens to random cities
 func (a *App) PopulateMapWithAliens() {
 	for _, alien := range a.Aliens {
 		city := a.getRandomCity()
@@ -66,6 +72,7 @@ func (a *App) PopulateMapWithAliens() {
 	}
 }
 
+// DefineFlags defines the flags for the app
 func (a *App) DefineFlags(cmd *cobra.Command) {
 	cmd.Flags().IntP("aliens", "a", 5, "Number of aliens")
 	cmd.Flags().IntP("max_moves", "m", 10000, "Max number of moves allowed for each alien")
@@ -74,6 +81,7 @@ func (a *App) DefineFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("log", "o", "output/stdout.log", "Log file")
 }
 
+// parseFlags parses the flags for the app
 func (a *App) parseFlags(cmd *cobra.Command) []any {
 	numAliens, _ := cmd.Flags().GetInt("aliens")
 	maxMoves, _ := cmd.Flags().GetInt("max_moves")
@@ -84,6 +92,9 @@ func (a *App) parseFlags(cmd *cobra.Command) []any {
 	return []any{numAliens, maxMoves, inputFilename, outputFilename, logfile}
 }
 
+// Init initializes the app by reading the input file and creating the cities
+// as well populating them with aliens
+// other necessary state, logger and controllers initialization is done here
 func (a *App) Init(cmd *cobra.Command) {
 	a.done = make(chan struct{})
 	a.isStopped = 0
@@ -123,7 +134,7 @@ func (a *App) Init(cmd *cobra.Command) {
 	a.AlienLocations = make(map[*City]AlienSet)
 
 	// Read the map from the file and create the cities
-	if err := a.ioCtrl.ReadMapFromFile(a.Cfg.MapInputFile); err != nil {
+	if err := a.ioCtrl.ReadMapFromFile(); err != nil {
 		a.logger.Logf("error: %v", err)
 		panic(err)
 	}
@@ -135,6 +146,7 @@ func (a *App) Init(cmd *cobra.Command) {
 	a.PopulateMapWithAliens()
 }
 
+// Run runs the main loop of the app
 func (a *App) Run() {
 	for {
 		// Check if the app has been stopped
@@ -184,24 +196,32 @@ func (a *App) Run() {
 	close(a.done)
 }
 
+// Stop stops the main loop of app
 func (a *App) Stop() {
 	atomic.StoreInt32(&a.isStopped, 1)
 }
 
+// Wait waits for the main loop to finish
 func (a *App) Wait() {
 	// Wait for the main loop to finish by waiting for the loopDone channel to be closed
 	<-a.done
 }
 
+// SaveResult saves the result of the simulation
+// in the form of an output file of the remaining cities (similar to the input file)
+// as well as it prints the result to stdout
 func (a *App) SaveResult() {
 	a.ioCtrl.WriteMapToFile()
 	a.ioCtrl.PrintResult()
 }
 
+// IsStopped returns true if the app has been stopped
 func (a *App) IsStopped() bool {
 	return atomic.LoadInt32(&a.isStopped) == 1
 }
 
+// Start starts the app by initializing it and running it
+// as well as saving the result after the main loop has finished
 func (a *App) Start(cmd *cobra.Command, args []string) {
 	a.Init(cmd)
 	a.Run()
@@ -228,10 +248,14 @@ func (a *App) SetIOController(ioCtrl *IOController) {
 	a.ioCtrl = ioCtrl
 }
 
+// SetLogger Sets the logger
 func (a *App) SetLogger(logger *logger.Logger) {
 	a.logger = logger
 }
 
+// NewApp creates a new app
+// initialization will still be required after calling this function.
+// See Init()
 func NewApp() *App {
 	app := &App{
 		done:      make(chan struct{}),
