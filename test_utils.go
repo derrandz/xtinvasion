@@ -13,6 +13,7 @@ type DummyAppConfig struct {
 // NewDummyApp(cfg *DummyAppConfig) *App creates a dummy app for testing.
 func NewDummyApp(cfg *DummyAppConfig) *App {
 	app := &App{
+		MaxMoves:       cfg.MaxMoves,
 		Aliens:         make(AlienSet),
 		AlienLocations: make(map[*City]AlienSet),
 		WorldMap:       &Map{Cities: make(map[string]*City)},

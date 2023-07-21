@@ -27,12 +27,17 @@ type Alien struct {
 	Moved       int
 }
 
+func (a *Alien) IsTrapped() bool {
+	return len(a.CurrentCity.Neighbours) == 0
+}
+
 type AlienSet map[int]*Alien
 
 type App struct {
 	logger *logger.Logger
 	ctrl   *Controller
 
+	MaxMoves       int
 	Aliens         AlienSet
 	AlienLocations map[*City]AlienSet
 	WorldMap       *Map
@@ -239,12 +244,7 @@ func (a *App) Run() {
 		// Move aliens around in the map
 		for _, alien := range a.Aliens {
 			if alien != nil {
-				nextCity, err := getRandomNeighbor(alien.CurrentCity)
-				if err != nil {
-					a.logger.Logf("error: %v", err)
-					continue
-				}
-				err = a.ctrl.MoveAlienToCity(alien.ID, nextCity.Name)
+				err := a.ctrl.MoveAlienToNextCity(alien)
 				if err != nil {
 					a.logger.Logf("error: %v", err)
 				}
@@ -300,4 +300,11 @@ func (a *App) Start(cmd *cobra.Command, args []string) {
 	a.Init(cmd)
 	a.Run()
 	a.PrintState()
+}
+
+func NewApp() *App {
+	app := &App{
+		MaxMoves: 10000,
+	}
+	return app
 }

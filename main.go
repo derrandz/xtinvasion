@@ -10,7 +10,7 @@ import (
 func main() {
 	var rootCmd = &cobra.Command{Use: "app"}
 
-	app := &App{}
+	app := NewApp()
 
 	// Add a start command
 	var startCmd = &cobra.Command{

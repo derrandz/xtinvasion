@@ -51,39 +51,38 @@ func (cc *Controller) DestroyCity(cityName string) error {
 	return nil
 }
 
-// MoveAlienToCity moves an alien to a city.
+// MoveAlienToNextCity moves an alien to a city.
 // If the alien is not in the city, it returns an error.
 // If the city does not exist, it returns an error.
 // If the city is isolated, it returns an error.
 // Otherwise, it moves the alien to the city.
-// Checking for whether the alien is already in the city is omitted to ease up testing
-// and such case would be avoided thanks to the caller's logic
-func (cc *Controller) MoveAlienToCity(alienID int, cityName string) error {
-	if alienID < 0 {
-		return fmt.Errorf("invalid alien ID")
+func (cc *Controller) MoveAlienToNextCity(alien *Alien) error {
+	if alien == nil {
+		return fmt.Errorf("alien is nil")
 	}
 
-	alien, found := cc.app.Aliens[alienID]
+	_, found := cc.app.Aliens[alien.ID]
 	if !found {
-		return fmt.Errorf("alien %d does not exist", alienID)
-	}
-
-	nextCity, found := cc.app.WorldMap.Cities[cityName]
-	if !found {
-		return fmt.Errorf("city %s does not exist", cityName)
-	}
-
-	if len(nextCity.Neighbours) == 0 {
-		return fmt.Errorf("city %s is isolated, alien %d cannot move", cityName, alienID)
+		return fmt.Errorf("alien %d does not exist in the world", alien.ID)
 	}
 
 	// Move the alien
 	_, found = cc.app.AlienLocations[alien.CurrentCity]
 	if !found {
-		return fmt.Errorf("alien %d is not in city %s", alienID, alien.CurrentCity.Name)
+		return fmt.Errorf("alien %d did not land in any city", alien.ID)
 	}
 
-	delete(cc.app.AlienLocations[alien.CurrentCity], alienID)
+	neighbour, err := getRandomNeighbor(alien.CurrentCity)
+	if err != nil {
+		return err
+	}
+
+	nextCity, found := cc.app.WorldMap.Cities[neighbour.Name]
+	if !found {
+		return fmt.Errorf("city %s does not exist in world map", neighbour.Name)
+	}
+
+	delete(cc.app.AlienLocations[alien.CurrentCity], alien.ID)
 	alien.CurrentCity = nextCity
 	alien.Moved++
 	if nextCityAliens, found := cc.app.AlienLocations[nextCity]; found {
@@ -110,7 +109,7 @@ func (cc *Controller) IsWorldDestroyed() bool {
 
 func (cc *Controller) IsAlienMovementLimitReached() bool {
 	for _, alien := range cc.app.Aliens {
-		if alien != nil && alien.Moved < 10000 {
+		if alien != nil && !alien.IsTrapped() && alien.Moved < cc.app.MaxMoves {
 			return false
 		}
 	}
