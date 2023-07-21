@@ -277,6 +277,10 @@ func (a *App) Wait() {
 	<-a.done
 }
 
+func (a *App) IsStopped() bool {
+	return atomic.LoadInt32(&a.isStopped) == 1
+}
+
 func (a *App) Start(cmd *cobra.Command, args []string) {
 	a.Init(cmd)
 	a.Run()

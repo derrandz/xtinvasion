@@ -2,6 +2,7 @@ package tests
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -208,4 +209,51 @@ func TestApp_Run(t *testing.T) {
 		assert.False(t, ctrl.IsAlienMovementLimitReached())
 		assert.True(t, ctrl.AreRemainingAliensTrapped())
 	})
+}
+
+// Test Stop behavior by creating a world with two aliens
+// that will never meet but will keep moving until maximum movement limit is reached (50000)
+// Stop will be called after 100ms, prior to maximum movement limit being reached.
+// This test config allows us to ensure that the world won't destroyed, nor the aliens,
+// nor will they be trapped.
+func TestApp_Stop(t *testing.T) {
+	cfg := &DummyAppConfig{
+		AlienCount: 2,
+		MaxMoves:   50000,
+		Map: map[string][]interface{}{
+			"A": []interface{}{
+				map[string]string{"north": "B"},
+			},
+			"B": []interface{}{
+				map[string]string{"south": "A"},
+			},
+			"C": []interface{}{
+				map[string]string{"west": "D"},
+			},
+			"D": []interface{}{
+				map[string]string{"east": "C"},
+			},
+		},
+		AlienLocations: map[string][]int{
+			"A": {0},
+			"C": {1},
+		},
+	}
+
+	app := NewDummyApp(cfg)
+	ctrl := app.StateController()
+
+	go app.Run()
+
+	time.AfterFunc(100*time.Millisecond, func() {
+		app.Stop()
+	})
+
+	app.Wait()
+
+	assert.True(t, app.IsStopped())
+	assert.False(t, ctrl.AreAllAliensDestroyed())
+	assert.False(t, ctrl.IsWorldDestroyed())
+	assert.False(t, ctrl.IsAlienMovementLimitReached())
+	assert.False(t, ctrl.AreRemainingAliensTrapped())
 }
