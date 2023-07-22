@@ -36,7 +36,7 @@ func (io *IOController) ReadMapFromFile() error {
 		cityName := cityData[0]
 
 		city := &City{Name: cityName, Neighbours: make(map[string]*City)}
-		io.app.WorldMap.Cities[cityName] = city
+		io.app.State.WorldMap.Cities[cityName] = city
 	}
 
 	// Reset scanner to start again from the beginning
@@ -55,7 +55,7 @@ func (io *IOController) ReadMapFromFile() error {
 		cityName := cityData[0]
 		cityNeighbours := cityData[1:]
 
-		city := io.app.WorldMap.Cities[cityName]
+		city := io.app.State.WorldMap.Cities[cityName]
 
 		for _, neighbourData := range cityNeighbours {
 			neighbour := strings.Split(neighbourData, "=")
@@ -66,7 +66,7 @@ func (io *IOController) ReadMapFromFile() error {
 			neighbourName := neighbour[1]
 			direction := neighbour[0]
 
-			if destCity, found := io.app.WorldMap.Cities[neighbourName]; !found {
+			if destCity, found := io.app.State.WorldMap.Cities[neighbourName]; !found {
 				return fmt.Errorf("neighbour city %s not found for %s", neighbourName, cityName)
 			} else {
 				city.Neighbours[direction] = destCity
@@ -80,7 +80,7 @@ func (io *IOController) ReadMapFromFile() error {
 	}
 
 	io.app.logger.Log("Map read successfully.")
-	io.app.logger.Logf("Cities: %d", len(io.app.WorldMap.Cities))
+	io.app.logger.Logf("Cities: %d", len(io.app.State.WorldMap.Cities))
 
 	return nil
 }
@@ -93,7 +93,7 @@ func (io *IOController) WriteMapToFile() error {
 	}
 	defer file.Close()
 
-	for cityName, city := range io.app.WorldMap.Cities {
+	for cityName, city := range io.app.State.WorldMap.Cities {
 		line := fmt.Sprintf("%s ", cityName)
 		for direction, neighbour := range city.Neighbours {
 			line += fmt.Sprintf("%s=%s", direction, neighbour.Name)
@@ -117,10 +117,10 @@ func (io *IOController) PrintResult() {
 	fmt.Println("+-------------------------- Simulation Result --------------------------+")
 
 	fmt.Println("Remaining Cities:")
-	printCities(app.WorldMap)
+	printCities(app.State.WorldMap)
 
 	fmt.Println("\nRemaining Aliens:")
-	printAliens(app.Aliens)
+	printAliens(app.State.Aliens)
 
 	fmt.Println("+-----------------------------------------------------------------------+")
 	fmt.Println("The resulting map of the world is saved to:", app.Cfg.MapOutputFile)

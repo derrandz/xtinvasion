@@ -24,47 +24,47 @@ func TestIOController_ReadMapFromFile(t *testing.T) {
 	err = app.IOController().ReadMapFromFile()
 	require.Nil(t, err)
 
-	assert.Equal(t, 4, len(app.WorldMap.Cities), "Expected 4 cities, got", len(app.WorldMap.Cities))
+	assert.Equal(t, 4, len(app.State.WorldMap.Cities), "Expected 4 cities, got", len(app.State.WorldMap.Cities))
 
-	for _, city := range app.WorldMap.Cities {
+	for _, city := range app.State.WorldMap.Cities {
 		assert.Equal(t, 2, len(city.Neighbours), "Expected 2 neighbours for", city.Name, "got", len(city.Neighbours))
 	}
 
 	assert.Equal(t,
 		"B",
-		app.WorldMap.Cities["A"].Neighbours["north"].Name,
-		"Expected B for A north, got", app.WorldMap.Cities["A"].Neighbours["north"].Name)
+		app.State.WorldMap.Cities["A"].Neighbours["north"].Name,
+		"Expected B for A north, got", app.State.WorldMap.Cities["A"].Neighbours["north"].Name)
 	assert.Equal(t,
 		"C",
-		app.WorldMap.Cities["A"].Neighbours["south"].Name,
-		"Expected C for A south, got", app.WorldMap.Cities["A"].Neighbours["south"].Name)
+		app.State.WorldMap.Cities["A"].Neighbours["south"].Name,
+		"Expected C for A south, got", app.State.WorldMap.Cities["A"].Neighbours["south"].Name)
 
 	assert.Equal(t,
 		"D",
-		app.WorldMap.Cities["B"].Neighbours["east"].Name,
-		"Expected D for B east, got", app.WorldMap.Cities["B"].Neighbours["east"].Name)
+		app.State.WorldMap.Cities["B"].Neighbours["east"].Name,
+		"Expected D for B east, got", app.State.WorldMap.Cities["B"].Neighbours["east"].Name)
 	assert.Equal(t,
 		"A",
-		app.WorldMap.Cities["B"].Neighbours["south"].Name,
-		"Expected A for B south, got", app.WorldMap.Cities["B"].Neighbours["south"].Name)
+		app.State.WorldMap.Cities["B"].Neighbours["south"].Name,
+		"Expected A for B south, got", app.State.WorldMap.Cities["B"].Neighbours["south"].Name)
 
 	assert.Equal(t,
 		"A",
-		app.WorldMap.Cities["C"].Neighbours["north"].Name,
-		"Expected A for C north, got", app.WorldMap.Cities["C"].Neighbours["north"].Name)
+		app.State.WorldMap.Cities["C"].Neighbours["north"].Name,
+		"Expected A for C north, got", app.State.WorldMap.Cities["C"].Neighbours["north"].Name)
 	assert.Equal(t,
 		"D",
-		app.WorldMap.Cities["C"].Neighbours["west"].Name,
-		"Expected D for C west, got", app.WorldMap.Cities["C"].Neighbours["west"].Name)
+		app.State.WorldMap.Cities["C"].Neighbours["west"].Name,
+		"Expected D for C west, got", app.State.WorldMap.Cities["C"].Neighbours["west"].Name)
 
 	assert.Equal(t,
 		"B",
-		app.WorldMap.Cities["D"].Neighbours["west"].Name,
-		"Expected B for D west, got", app.WorldMap.Cities["D"].Neighbours["west"].Name)
+		app.State.WorldMap.Cities["D"].Neighbours["west"].Name,
+		"Expected B for D west, got", app.State.WorldMap.Cities["D"].Neighbours["west"].Name)
 	assert.Equal(t,
 		"C",
-		app.WorldMap.Cities["D"].Neighbours["east"].Name,
-		"Expected C for D east, got", app.WorldMap.Cities["D"].Neighbours["east"].Name)
+		app.State.WorldMap.Cities["D"].Neighbours["east"].Name,
+		"Expected C for D east, got", app.State.WorldMap.Cities["D"].Neighbours["east"].Name)
 }
 
 func TestIOController_WriteMapToFile(t *testing.T) {

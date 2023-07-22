@@ -18,32 +18,34 @@ func NewDummyApp(cfg *DummyAppConfig) *simulation.App {
 	app := simulation.NewApp()
 
 	app.Cfg.MaxMoves = cfg.MaxMoves
-	app.Aliens = make(simulation.AlienSet)
-	app.AlienLocations = make(map[*simulation.City]simulation.AlienSet)
-	app.WorldMap = &simulation.Map{Cities: make(map[string]*simulation.City)}
+	app.State = &simulation.AppState{
+		Aliens:         make(simulation.AlienSet),
+		AlienLocations: make(map[*simulation.City]simulation.AlienSet),
+		WorldMap:       &simulation.Map{Cities: make(map[string]*simulation.City)},
+	}
 
 	for i := 0; i < cfg.AlienCount; i++ {
-		app.Aliens[i] = &simulation.Alien{ID: i, Moved: 0}
+		app.State.Aliens[i] = &simulation.Alien{ID: i, Moved: 0}
 	}
 
 	for city := range cfg.Map {
-		app.WorldMap.Cities[city] = &simulation.City{Name: city, Neighbours: make(map[string]*simulation.City)}
+		app.State.WorldMap.Cities[city] = &simulation.City{Name: city, Neighbours: make(map[string]*simulation.City)}
 	}
 
 	for city, neighbours := range cfg.Map {
 		for _, neighbour := range neighbours {
 			neighbourCity := neighbour.(map[string]string)
 			for direction, neighbourName := range neighbourCity {
-				app.WorldMap.Cities[city].Neighbours[direction] = app.WorldMap.Cities[neighbourName]
+				app.State.WorldMap.Cities[city].Neighbours[direction] = app.State.WorldMap.Cities[neighbourName]
 			}
 		}
 	}
 
 	for city, alienIDs := range cfg.AlienLocations {
-		app.AlienLocations[app.WorldMap.Cities[city]] = simulation.AlienSet{}
+		app.State.AlienLocations[app.State.WorldMap.Cities[city]] = simulation.AlienSet{}
 		for _, id := range alienIDs {
-			app.Aliens[id].CurrentCity = app.WorldMap.Cities[city]
-			app.AlienLocations[app.WorldMap.Cities[city]][id] = app.Aliens[id]
+			app.State.Aliens[id].CurrentCity = app.State.WorldMap.Cities[city]
+			app.State.AlienLocations[app.State.WorldMap.Cities[city]][id] = app.State.Aliens[id]
 		}
 	}
 
@@ -55,11 +57,14 @@ func NewDummyApp(cfg *DummyAppConfig) *simulation.App {
 }
 
 func NewEmptyDummyApp() *simulation.App {
-	app := &simulation.App{}
-	app.Aliens = make(simulation.AlienSet)
-	app.WorldMap = &simulation.Map{Cities: make(map[string]*simulation.City)}
-	app.AlienLocations = make(map[*simulation.City]simulation.AlienSet)
-	app.Cfg = &simulation.AppCfg{}
+	app := &simulation.App{
+		State: &simulation.AppState{
+			Aliens:         make(simulation.AlienSet),
+			WorldMap:       &simulation.Map{Cities: make(map[string]*simulation.City)},
+			AlienLocations: make(map[*simulation.City]simulation.AlienSet),
+		},
+		Cfg: &simulation.AppCfg{},
+	}
 
 	app.SetStateController(simulation.NewStateController(app))
 	app.SetIOController(simulation.NewIOController(app))

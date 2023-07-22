@@ -11,15 +11,15 @@ func TestApp_PopulateMapWithAliens(t *testing.T) {
 	app := NewEmptyDummyApp()
 	prefilledApp := NewDummyApp(dummyAppCfg)
 
-	app.Aliens = prefilledApp.Aliens
-	app.WorldMap = prefilledApp.WorldMap
+	app.State.Aliens = prefilledApp.State.Aliens
+	app.State.WorldMap = prefilledApp.State.WorldMap
 
 	app.PopulateMapWithAliens()
 
-	populatedCities := len(app.AlienLocations)
-	assert.LessOrEqual(t, populatedCities, len(app.WorldMap.Cities))
+	populatedCities := len(app.State.AlienLocations)
+	assert.LessOrEqual(t, populatedCities, len(app.State.WorldMap.Cities))
 
-	for city, aliens := range app.AlienLocations {
+	for city, aliens := range app.State.AlienLocations {
 		assert.GreaterOrEqual(t, len(aliens), 1)
 		for _, alien := range aliens {
 			assert.Equal(t, city, alien.CurrentCity)

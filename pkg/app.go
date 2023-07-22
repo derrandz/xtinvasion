@@ -19,6 +19,12 @@ type AppCfg struct {
 	MapOutputFile string
 }
 
+type AppState struct {
+	Aliens         AlienSet
+	AlienLocations map[*City]AlienSet
+	WorldMap       *Map
+}
+
 // App is the main application
 // It contains the simulation state and the state and io controllers
 type App struct {
@@ -27,11 +33,8 @@ type App struct {
 	stateCtrl *StateController
 	ioCtrl    *IOController
 
-	Cfg *AppCfg
-
-	Aliens         AlienSet
-	AlienLocations map[*City]AlienSet
-	WorldMap       *Map
+	Cfg   *AppCfg
+	State *AppState // made public for testing
 
 	isStopped int32 // Use int32 for atomic operations
 	done      chan struct{}
@@ -41,14 +44,14 @@ type App struct {
 func (a *App) createAliens(numAliens int) {
 	for i := 0; i < numAliens; i++ {
 		alien := &Alien{ID: i, Moved: 0}
-		a.Aliens[i] = alien
+		a.State.Aliens[i] = alien
 	}
 }
 
 // getRandomCity returns a random city from the map
 func (a *App) getRandomCity() *City {
 	var cities []*City
-	for _, city := range a.WorldMap.Cities {
+	for _, city := range a.State.WorldMap.Cities {
 		cities = append(cities, city)
 	}
 
@@ -61,12 +64,12 @@ func (a *App) getRandomCity() *City {
 
 // PopulateMapWithAliens assigns aliens to random cities
 func (a *App) PopulateMapWithAliens() {
-	for _, alien := range a.Aliens {
+	for _, alien := range a.State.Aliens {
 		city := a.getRandomCity()
-		if location, found := a.AlienLocations[city]; found {
+		if location, found := a.State.AlienLocations[city]; found {
 			location[alien.ID] = alien
 		} else {
-			a.AlienLocations[city] = map[int]*Alien{alien.ID: alien}
+			a.State.AlienLocations[city] = map[int]*Alien{alien.ID: alien}
 		}
 		alien.CurrentCity = city
 	}
@@ -129,9 +132,11 @@ func (a *App) Init(cmd *cobra.Command) {
 	// Initialize the map and aliens (state)
 	numAliens := flags[0].(int)
 
-	a.Aliens = make(AlienSet, numAliens)
-	a.WorldMap = &Map{Cities: make(map[string]*City)}
-	a.AlienLocations = make(map[*City]AlienSet)
+	a.State = &AppState{
+		Aliens:         make(AlienSet, numAliens),
+		AlienLocations: make(map[*City]AlienSet),
+		WorldMap:       &Map{Cities: make(map[string]*City)},
+	}
 
 	// Read the map from the file and create the cities
 	if err := a.ioCtrl.ReadMapFromFile(); err != nil {
@@ -172,8 +177,8 @@ func (a *App) Run() {
 		}
 
 		// Check if any city has two or more aliens and destroy them
-		for city := range a.AlienLocations {
-			if len(a.AlienLocations[city]) > 1 {
+		for city := range a.State.AlienLocations {
+			if len(a.State.AlienLocations[city]) > 1 {
 				err := a.stateCtrl.DestroyCity(city.Name)
 				if err != nil {
 					a.logger.Logf("error: %v", err)
@@ -182,7 +187,7 @@ func (a *App) Run() {
 		}
 
 		// Move aliens around in the map
-		for _, alien := range a.Aliens {
+		for _, alien := range a.State.Aliens {
 			if alien != nil {
 				err := a.stateCtrl.MoveAlienToNextCity(alien)
 				if err != nil && !strings.Contains(err.Error(), "getRandomNeighbor: city has no neighbours") {
@@ -251,6 +256,11 @@ func (a *App) SetIOController(ioCtrl *IOController) {
 // SetLogger Sets the logger
 func (a *App) SetLogger(logger *logger.Logger) {
 	a.logger = logger
+}
+
+// CopyState is a state getter, returns a copy of the state
+func (a *App) CopyState() AppState {
+	return *a.State
 }
 
 // NewApp creates a new app

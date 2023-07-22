@@ -58,7 +58,7 @@ func TestCtrl_DestroyAlien(t *testing.T) {
 	// Destroy an alien that exists.
 	err := ctrl.DestroyAlien(0)
 	require.Nil(t, err)
-	assert.Equal(t, 3, len(app.Aliens))
+	assert.Equal(t, 3, len(app.State.Aliens))
 
 	// Destroy an alien that doesn't exist.
 	err = ctrl.DestroyAlien(6)
@@ -76,7 +76,7 @@ func TestCtrl_DestroyCity(t *testing.T) {
 	// Destroy a city that exists.
 	err = ctrl.DestroyCity("A")
 	require.Nil(t, err)
-	_, exists := app.WorldMap.Cities["A"]
+	_, exists := app.State.WorldMap.Cities["A"]
 	require.False(t, exists)
 }
 
@@ -94,7 +94,7 @@ func TestCtrl_MoveAlienToNextCity(t *testing.T) {
 	require.NotNil(t, err)
 
 	// move alien when alien is not in any city (alienLocation does not have this alien)
-	app.Aliens[100] = alien
+	app.State.Aliens[100] = alien
 	err = ctrl.MoveAlienToNextCity(alien)
 	require.NotNil(t, err)
 
@@ -105,7 +105,7 @@ func TestCtrl_MoveAlienToNextCity(t *testing.T) {
 
 	// move alien when alien's city has no neighbours
 	newCity := &simulation.City{Name: "Atlantis"}
-	app.AlienLocations[newCity] = simulation.AlienSet{}
+	app.State.AlienLocations[newCity] = simulation.AlienSet{}
 	alien.CurrentCity = newCity
 	err = ctrl.MoveAlienToNextCity(alien)
 	require.NotNil(t, err)
@@ -122,11 +122,11 @@ func TestCtrl_MoveAlienToNextCity(t *testing.T) {
 	require.NotNil(t, err)
 
 	// move alien when everything is fine
-	alien = app.Aliens[0]
+	alien = app.State.Aliens[0]
 	err = ctrl.MoveAlienToNextCity(alien)
 	require.Nil(t, err)
 
-	assert.True(t, app.Aliens[0].CurrentCity == app.WorldMap.Cities["B"] || app.Aliens[0].CurrentCity == app.WorldMap.Cities["C"])
+	assert.True(t, app.State.Aliens[0].CurrentCity == app.State.WorldMap.Cities["B"] || app.State.Aliens[0].CurrentCity == app.State.WorldMap.Cities["C"])
 }
 
 func TestCtrl_AreAllAliensDestroyed(t *testing.T) {
@@ -137,14 +137,14 @@ func TestCtrl_AreAllAliensDestroyed(t *testing.T) {
 	assert.False(t, areAllAliensDestroyed)
 
 	// Destroy all aliens.
-	for id := range app.Aliens {
+	for id := range app.State.Aliens {
 		err := ctrl.DestroyAlien(id)
 		require.Nil(t, err)
 	}
 
 	areAllAliensDestroyed = ctrl.AreAllAliensDestroyed()
 	assert.True(t, areAllAliensDestroyed)
-	assert.True(t, len(app.Aliens) == 0)
+	assert.True(t, len(app.State.Aliens) == 0)
 }
 
 func TestCtrl_IsAlienMovementLimitReached(t *testing.T) {
@@ -157,10 +157,10 @@ func TestCtrl_IsAlienMovementLimitReached(t *testing.T) {
 
 		// Move all aliens 10,000 times.
 		for i := 0; i < 500; i++ {
-			ctrl.MoveAlienToNextCity(app.Aliens[0])
-			ctrl.MoveAlienToNextCity(app.Aliens[1])
-			ctrl.MoveAlienToNextCity(app.Aliens[2])
-			ctrl.MoveAlienToNextCity(app.Aliens[3])
+			ctrl.MoveAlienToNextCity(app.State.Aliens[0])
+			ctrl.MoveAlienToNextCity(app.State.Aliens[1])
+			ctrl.MoveAlienToNextCity(app.State.Aliens[2])
+			ctrl.MoveAlienToNextCity(app.State.Aliens[3])
 		}
 
 		isAlienMvmtReached = ctrl.IsAlienMovementLimitReached()
@@ -203,10 +203,10 @@ func TestCtrl_IsAlienMovementLimitReached(t *testing.T) {
 
 		// Move all aliens 10,000 times.
 		for i := 0; i < 500; i++ {
-			err := ctrl.MoveAlienToNextCity(app.Aliens[0])
+			err := ctrl.MoveAlienToNextCity(app.State.Aliens[0])
 			require.Nil(t, err)
 
-			err = ctrl.MoveAlienToNextCity(app.Aliens[1]) // won't move, will return error
+			err = ctrl.MoveAlienToNextCity(app.State.Aliens[1]) // won't move, will return error
 			require.NotNil(t, err)
 		}
 
@@ -223,7 +223,7 @@ func TestCtrl_IsWorldDestroyed(t *testing.T) {
 	assert.False(t, isWorldDestroyed)
 
 	// Destroy all cities.
-	for _, city := range app.WorldMap.Cities {
+	for _, city := range app.State.WorldMap.Cities {
 		err := ctrl.DestroyCity(city.Name)
 		require.Nil(t, err)
 	}
@@ -231,9 +231,9 @@ func TestCtrl_IsWorldDestroyed(t *testing.T) {
 	isWorldDestroyed = ctrl.IsWorldDestroyed()
 
 	assert.True(t, isWorldDestroyed)
-	assert.True(t, len(app.WorldMap.Cities) == 0)
-	assert.True(t, len(app.AlienLocations) == 0)
-	assert.True(t, len(app.Aliens) == 0)
+	assert.True(t, len(app.State.WorldMap.Cities) == 0)
+	assert.True(t, len(app.State.AlienLocations) == 0)
+	assert.True(t, len(app.State.Aliens) == 0)
 }
 
 func TestCtrl_AreRemainingAliensTrapped(t *testing.T) {
@@ -245,7 +245,7 @@ func TestCtrl_AreRemainingAliensTrapped(t *testing.T) {
 		assert.False(t, areRemainingAliensTrapped)
 
 		// Destroy all cities except one.
-		for _, city := range app.WorldMap.Cities {
+		for _, city := range app.State.WorldMap.Cities {
 			if city.Name != "A" {
 				err := ctrl.DestroyCity(city.Name)
 				require.Nil(t, err)
@@ -254,7 +254,7 @@ func TestCtrl_AreRemainingAliensTrapped(t *testing.T) {
 
 		areRemainingAliensTrapped = ctrl.AreRemainingAliensTrapped()
 		assert.True(t, areRemainingAliensTrapped)
-		assert.True(t, len(app.WorldMap.Cities) > 0)
+		assert.True(t, len(app.State.WorldMap.Cities) > 0)
 	})
 	t.Run("Multiple aliens trapped", func(t *testing.T) {
 		appCfg := &DummyAppConfig{
@@ -279,6 +279,6 @@ func TestCtrl_AreRemainingAliensTrapped(t *testing.T) {
 		areRemainingAliensTrapped := ctrl.AreRemainingAliensTrapped()
 
 		assert.True(t, areRemainingAliensTrapped)
-		assert.True(t, len(app.WorldMap.Cities) > 0)
+		assert.True(t, len(app.State.WorldMap.Cities) > 0)
 	})
 }
