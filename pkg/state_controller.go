@@ -2,11 +2,20 @@ package simulation
 
 import (
 	"fmt"
+
+	"github.com/derrandz/xtinvasion/pkg/logger"
 )
 
 // StateController handles all state operations.
 type StateController struct {
 	app *App
+
+	// printer is used to print required messages
+	// we differentiate between the printer and the app's logger
+	// as the app's logger logs the app's errors and warnings (to file generally or stdout if specified)
+	// while the printer is used to print messages to the user
+	// usually to stdout (or to other writers, check cmd/tui/tui.go for example)
+	printer *logger.Logger
 }
 
 // DestroyAlien destroys an alien and removes it from the city
@@ -40,7 +49,9 @@ func (sc *StateController) DestroyCity(cityName string) error {
 		sc.DestroyAlien(alien.ID)
 	}
 
-	fmt.Println(msg)
+	if sc.printer != nil {
+		sc.printer.Log(msg)
+	}
 
 	delete(sc.app.State.AlienLocations, city)
 	delete(sc.app.State.WorldMap.Cities, cityName)
@@ -169,6 +180,11 @@ func (sc *StateController) ListenForStateUpdates() chan AppState {
 // App returns the app.
 func (sc *StateController) App() *App {
 	return sc.app
+}
+
+// SetPrinter sets the printer.
+func (sc *StateController) SetPrinter(printer *logger.Logger) {
+	sc.printer = printer
 }
 
 // NewStateController creates a new state controller.

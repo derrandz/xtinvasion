@@ -41,6 +41,7 @@ type App struct {
 	stateCh chan AppState // used to broadcast state changes to the observers
 
 	isStopped int32 // Use int32 for atomic operations
+	ready     chan struct{}
 	done      chan struct{}
 }
 
@@ -167,6 +168,8 @@ func (a *App) Init(cmd *cobra.Command) {
 
 	// Populate the alien locations
 	a.PopulateMapWithAliens()
+
+	close(a.ready)
 }
 
 // Run runs the main loop of the app
@@ -226,6 +229,11 @@ func (a *App) Run() {
 
 	// Indicate that the main loop has finished by closing the channel
 	close(a.done)
+}
+
+// Ready returns a channel that is closed when the app is ready
+func (a *App) Ready() <-chan struct{} {
+	return a.ready
 }
 
 // Stop stops the main loop of app
@@ -290,6 +298,7 @@ func (a *App) SetLogger(logger *logger.Logger) {
 // See Init()
 func NewApp() *App {
 	app := &App{
+		ready:     make(chan struct{}),
 		done:      make(chan struct{}),
 		isStopped: 0,
 		stateCh:   make(chan AppState),
