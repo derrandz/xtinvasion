@@ -70,7 +70,7 @@ func (io *IOController) ReadMapFromFile() error {
 				return fmt.Errorf("neighbour city %s not found for %s", neighbourName, cityName)
 			} else {
 				city.Neighbours[direction] = destCity
-				destCity.Neighbours[oppositeDirection(direction)] = city
+				destCity.Neighbours[OppositeDirection(direction)] = city
 			}
 		}
 	}
@@ -122,6 +122,8 @@ func (io *IOController) PrintResult() {
 	fmt.Println("\nRemaining Aliens:")
 	printAliens(app.State.Aliens)
 
+	fmt.Println()
+	fmt.Println("Result: ", app.stateCtrl.SimulationResult())
 	fmt.Println("+-----------------------------------------------------------------------+")
 	fmt.Println("The resulting map of the world is saved to:", app.Cfg.MapOutputFile)
 }

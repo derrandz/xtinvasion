@@ -6,14 +6,16 @@ import (
 	"time"
 )
 
+// functions made public for testing
+
 // getRandomCity returns a random city from the map
-func getRandomNeighbor(city *City) (*City, error) {
+func GetRandomNeighbor(city *City) (*City, error) {
 	if city == nil {
-		return nil, fmt.Errorf("getRandomNeighbor: city is nil")
+		return nil, fmt.Errorf("GetRandomNeighbor: city is nil")
 	}
 
 	if len(city.Neighbours) == 0 {
-		return nil, fmt.Errorf("getRandomNeighbor: city has no neighbours or neighbours have been destroyed. city=%s", city.Name)
+		return nil, fmt.Errorf("GetRandomNeighbor: city has no neighbours or neighbours have been destroyed. city=%s", city.Name)
 	}
 
 	rand.Seed(time.Now().UnixNano())
@@ -22,7 +24,7 @@ func getRandomNeighbor(city *City) (*City, error) {
 	for neighbour := range city.Neighbours {
 		if i == index {
 			if city.Neighbours[neighbour] == nil {
-				return nil, fmt.Errorf("getRandomNeighbor: city %s has a nil neighbour", city.Name)
+				return nil, fmt.Errorf("GetRandomNeighbor: city %s has a nil neighbour", city.Name)
 			}
 			return city.Neighbours[neighbour], nil
 		}
@@ -35,7 +37,7 @@ func getRandomNeighbor(city *City) (*City, error) {
 
 // oppositeDirection returns the opposite direction of the given direction
 // used during map creation
-func oppositeDirection(direction string) string {
+func OppositeDirection(direction string) string {
 	switch direction {
 	case "north":
 		return "south"
@@ -52,7 +54,7 @@ func oppositeDirection(direction string) string {
 
 // removeSliceElement removes an element from a slice
 // used during state updates
-func removeSliceElement[T any](slice []T, index int) []T {
+func RemoveSliceElement[T any](slice []T, index int) []T {
 	// Check if the index is out of range
 	if index < 0 || index >= len(slice) {
 		return slice

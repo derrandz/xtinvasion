@@ -86,7 +86,7 @@ func (sc *StateController) MoveAlienToNextCity(alien *Alien) error {
 		return fmt.Errorf("alien %d did not land in any city", alien.ID)
 	}
 
-	neighbour, err := getRandomNeighbor(alien.CurrentCity)
+	neighbour, err := GetRandomNeighbor(alien.CurrentCity)
 	if err != nil {
 		return err
 	}
