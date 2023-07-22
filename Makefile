@@ -8,7 +8,7 @@ all: build
 
 ## build: Build the program
 build:
-	$(GO) build cmd/main.go -o ./build/$(BINARY_NAME)
+	$(GO) build cmd/cli/cli.go -o ./build/$(BINARY_NAME)
 
 ## clean: Clean the build
 clean:
@@ -16,11 +16,15 @@ clean:
 
 ## start: Run the program with the specified number of aliens, input file, log file, and output file
 start:
-	$(GO) run cmd/main.go start --aliens=$(aliens) --input=$(input) --log=$(log) --output=$(output)
+	$(GO) run cmd/cli/cli.go start --aliens=$(aliens) --input=$(input) --log=$(log) --output=$(output)
+
+## start-tui: Runs the simulation with terminal UI to follow activity
+start-tui:
+	$(GO) run cmd/tui/tui.go start --aliens=$(aliens) --input=$(input) --log=$(log) --output=$(output) --delay --delay_ms=$(delay_ms) --max_moves=$(max_moves)
 
 ## start-help: Print simulation help
 make start-help:
-	$(GO) run cmd/main.go start --help
+	$(GO) run cmd/cli/cli.go start --help
 
 ## test: Run the program with default number of aliens (10)
 test:

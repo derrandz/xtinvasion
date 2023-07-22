@@ -114,7 +114,7 @@ func (m *model) handleStateUpdate(msg tea.Msg) {
 		})
 	}
 
-	m.citiesTable.SetRows(newCityRows[:4])
+	m.citiesTable.SetRows(newCityRows)
 }
 
 func (m *model) handleActivityUpdate(msg string) {
@@ -207,8 +207,8 @@ func runTUI(app *simulation.App) func(*cobra.Command, []string) {
 		aliensColumns := []table.Column{
 			{Title: "ID", Width: 10},
 			{Title: "Current City", Width: 15},
-			{Title: "Moved", Width: 5},
-			{Title: "Is Trapped ?", Width: 10},
+			{Title: "Moved", Width: 8},
+			{Title: "Is Trapped ?", Width: 20},
 		}
 		aliensRows := []table.Row{}
 
@@ -243,7 +243,7 @@ func runTUI(app *simulation.App) func(*cobra.Command, []string) {
 			table.WithColumns(activityColumns),
 			table.WithRows(activityRows),
 			table.WithFocused(true),
-			table.WithHeight(7),
+			table.WithHeight(15),
 		)
 
 		s := table.DefaultStyles()
@@ -275,6 +275,14 @@ func runTUI(app *simulation.App) func(*cobra.Command, []string) {
 			app.Init(cmd)
 			app.StateController().SetPrinter(activityPrinter)
 			app.Run()
+
+			fmt.Println()
+			fmt.Println()
+			fmt.Println("----")
+			fmt.Println("Simulation ended")
+			fmt.Println("Result:", app.StateController().SimulationResult())
+			fmt.Println("Press q or ctrl+c to exit")
+			fmt.Println()
 		}()
 
 		go func() {
@@ -286,6 +294,15 @@ func runTUI(app *simulation.App) func(*cobra.Command, []string) {
 				}
 			}
 		}()
+
+		fmt.Println()
+		fmt.Println("Welcome to ExteraTerrestrial Invasion Simulation (xtinvasion)!")
+		fmt.Println()
+		fmt.Println()
+		fmt.Println("To toggle between tables, press ESC")
+		fmt.Println("To navigate between rows, use arrow keys")
+		fmt.Println("To exit, press q or ctrl+c")
+		fmt.Println()
 
 		if _, err := tea.NewProgram(m).Run(); err != nil {
 			fmt.Println("Error running program:", err)

@@ -38,6 +38,19 @@ Run:
 ```
 $ make godoc
 ```
+
+### Bonus
+
+To run a terminal UI version to watch the simulation in action, run:
+```
+$ make start-tui aliens=50 input=data/map.txt output=output/map.txt log=output/stdout.log delay_ms=40 max_moves=400
+```
+_Reduce max_moves to avoid waiting too long for the simulation to finish. You can also control the delay_ms which slows down the simulation to your preferences_
+
+The terminal UI should look as follows:
+
+![Terminal UI](./tui-screenshot.png)
+
 and open the following link in your browser: http://localhost:6060/pkg/github.com/derrandz/xtinvasion/pkg/
 
 ## Design

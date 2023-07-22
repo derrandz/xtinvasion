@@ -157,6 +157,21 @@ func (sc *StateController) AreRemainingAliensTrapped() bool {
 	return true
 }
 
+// SimulationResult returns a string describing the simulation termination reason.
+func (sc *StateController) SimulationResult() string {
+	if sc.IsWorldDestroyed() {
+		return "The world has been destroyed"
+	} else if sc.AreAllAliensDestroyed() {
+		return "All aliens have been destroyed"
+	} else if sc.IsAlienMovementLimitReached() {
+		return "Alien movement limit reached"
+	} else if sc.AreRemainingAliensTrapped() {
+		return "All remaining aliens are trapped"
+	} else {
+		return "Unknown"
+	}
+}
+
 // CopyState is a state getter, returns a copy of the state
 // made public for testing
 func (sc *StateController) CopyState() AppState {
