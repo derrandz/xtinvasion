@@ -13,10 +13,12 @@ import (
 
 // AppCfg is the configuration for the app
 type AppCfg struct {
-	MaxMoves      int
-	MapInputFile  string
-	LogFile       string
-	MapOutputFile string
+	MaxMoves      int    // Max number of moves allowed for each alien
+	MapInputFile  string // Map input filepath
+	LogFile       string // Log filepath
+	MapOutputFile string // Map output filepath
+	UseDelay      bool   // Use delay to slow down the simulation for observation
+	DelayMS       int    // Delay in milliseconds to slow down the simulation for observation
 }
 
 type AppState struct {
@@ -35,6 +37,8 @@ type App struct {
 
 	Cfg   *AppCfg
 	State *AppState // made public for testing
+
+	stateCh chan AppState // used to broadcast state changes to the observers
 
 	isStopped int32 // Use int32 for atomic operations
 	done      chan struct{}
@@ -82,6 +86,8 @@ func (a *App) DefineFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("input", "i", "data/map.txt", "Map input file")
 	cmd.Flags().StringP("output", "l", "output/map.txt", "Map output file")
 	cmd.Flags().StringP("log", "o", "output/stdout.log", "Log file")
+	cmd.Flags().BoolP("delay", "d", false, "Use delay to slow down the simulation for observation")
+	cmd.Flags().IntP("delay_ms", "s", 1000, "Delay in milliseconds to slow down the simulation for observation")
 }
 
 // parseFlags parses the flags for the app
@@ -91,8 +97,18 @@ func (a *App) parseFlags(cmd *cobra.Command) []any {
 	inputFilename, _ := cmd.Flags().GetString("input")
 	outputFilename, _ := cmd.Flags().GetString("output")
 	logfile, _ := cmd.Flags().GetString("log")
+	useDelay, _ := cmd.Flags().GetBool("delay")
+	delayMS, _ := cmd.Flags().GetInt("delay_ms")
 
-	return []any{numAliens, maxMoves, inputFilename, outputFilename, logfile}
+	return []any{
+		numAliens,
+		maxMoves,
+		inputFilename,
+		outputFilename,
+		logfile,
+		useDelay,
+		delayMS,
+	}
 }
 
 // Init initializes the app by reading the input file and creating the cities
@@ -111,6 +127,8 @@ func (a *App) Init(cmd *cobra.Command) {
 		MapInputFile:  flags[2].(string),
 		MapOutputFile: flags[3].(string),
 		LogFile:       flags[4].(string),
+		UseDelay:      flags[5].(bool),
+		DelayMS:       flags[6].(int),
 	}
 
 	// Initialize the logger
@@ -159,6 +177,12 @@ func (a *App) Run() {
 			break
 		}
 
+		if a.Cfg.UseDelay {
+			// Sleep for a while to slow down the simulation for observation
+			a.logger.Logf("sleeping for %d ms", a.Cfg.DelayMS)
+			sleepMS(a.Cfg.DelayMS)
+		}
+
 		// Check if all aliens have been destroyed
 		if a.stateCtrl.AreAllAliensDestroyed() {
 			a.logger.Log("All aliens have been destroyed.")
@@ -195,6 +219,9 @@ func (a *App) Run() {
 				}
 			}
 		}
+
+		// Broadcast state changes to the observers
+		a.stateCtrl.BroadcastStateChanges()
 	}
 
 	// Indicate that the main loop has finished by closing the channel
@@ -258,11 +285,6 @@ func (a *App) SetLogger(logger *logger.Logger) {
 	a.logger = logger
 }
 
-// CopyState is a state getter, returns a copy of the state
-func (a *App) CopyState() AppState {
-	return *a.State
-}
-
 // NewApp creates a new app
 // initialization will still be required after calling this function.
 // See Init()
@@ -270,6 +292,7 @@ func NewApp() *App {
 	app := &App{
 		done:      make(chan struct{}),
 		isStopped: 0,
+		stateCh:   make(chan AppState),
 		Cfg:       &AppCfg{},
 	}
 	return app

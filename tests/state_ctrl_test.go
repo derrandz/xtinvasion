@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"testing"
 
 	simulation "github.com/derrandz/xtinvasion/pkg"
@@ -51,7 +52,7 @@ var (
 	}
 )
 
-func TestCtrl_DestroyAlien(t *testing.T) {
+func TestStateCtrl_DestroyAlien(t *testing.T) {
 	app := NewDummyApp(dummyAppCfg)
 	ctrl := app.StateController()
 
@@ -65,7 +66,7 @@ func TestCtrl_DestroyAlien(t *testing.T) {
 	require.NotNil(t, err)
 }
 
-func TestCtrl_DestroyCity(t *testing.T) {
+func TestStateCtrl_DestroyCity(t *testing.T) {
 	app := NewDummyApp(dummyAppCfg)
 	ctrl := app.StateController()
 
@@ -80,7 +81,7 @@ func TestCtrl_DestroyCity(t *testing.T) {
 	require.False(t, exists)
 }
 
-func TestCtrl_MoveAlienToNextCity(t *testing.T) {
+func TestStateCtrl_MoveAlienToNextCity(t *testing.T) {
 	app := NewDummyApp(dummyAppCfg)
 	ctrl := app.StateController()
 
@@ -129,7 +130,7 @@ func TestCtrl_MoveAlienToNextCity(t *testing.T) {
 	assert.True(t, app.State.Aliens[0].CurrentCity == app.State.WorldMap.Cities["B"] || app.State.Aliens[0].CurrentCity == app.State.WorldMap.Cities["C"])
 }
 
-func TestCtrl_AreAllAliensDestroyed(t *testing.T) {
+func TestStateCtrl_AreAllAliensDestroyed(t *testing.T) {
 	app := NewDummyApp(dummyAppCfg)
 	ctrl := app.StateController()
 
@@ -147,7 +148,7 @@ func TestCtrl_AreAllAliensDestroyed(t *testing.T) {
 	assert.True(t, len(app.State.Aliens) == 0)
 }
 
-func TestCtrl_IsAlienMovementLimitReached(t *testing.T) {
+func TestStateCtrl_IsAlienMovementLimitReached(t *testing.T) {
 	t.Run("No trapped aliens", func(t *testing.T) {
 		app := NewDummyApp(dummyAppCfg)
 		ctrl := app.StateController()
@@ -215,7 +216,7 @@ func TestCtrl_IsAlienMovementLimitReached(t *testing.T) {
 	})
 }
 
-func TestCtrl_IsWorldDestroyed(t *testing.T) {
+func TestStateCtrl_IsWorldDestroyed(t *testing.T) {
 	app := NewDummyApp(dummyAppCfg)
 	ctrl := app.StateController()
 
@@ -236,7 +237,7 @@ func TestCtrl_IsWorldDestroyed(t *testing.T) {
 	assert.True(t, len(app.State.Aliens) == 0)
 }
 
-func TestCtrl_AreRemainingAliensTrapped(t *testing.T) {
+func TestStateCtrl_AreRemainingAliensTrapped(t *testing.T) {
 	t.Run("Single alien trapped", func(t *testing.T) {
 		app := NewDummyApp(dummyAppCfg)
 		ctrl := app.StateController()
@@ -281,4 +282,49 @@ func TestCtrl_AreRemainingAliensTrapped(t *testing.T) {
 		assert.True(t, areRemainingAliensTrapped)
 		assert.True(t, len(app.State.WorldMap.Cities) > 0)
 	})
+}
+
+func TestStateCtrl_BroadcastStateChanges(t *testing.T) {
+	app := NewDummyApp(dummyAppCfg)
+	ctrl := app.StateController()
+
+	// Broadcast state changes.
+	go func() {
+		ctrl.BroadcastStateChanges()
+	}()
+
+	// Retrieve the state changes.
+	state := <-ctrl.ListenForStateUpdates()
+
+	// Check if the state changes have been broadcasted.
+	assert.True(t, len(state.Aliens) == len(app.State.Aliens))
+	assert.True(t, len(state.WorldMap.Cities) == len(app.State.WorldMap.Cities))
+	assert.True(t, len(state.AlienLocations) == len(app.State.AlienLocations))
+
+	// Destroy a city.
+	err := ctrl.DestroyCity("A")
+	require.Nil(t, err)
+
+	fmt.Println(app.State.Aliens, app.State.Aliens[1])
+
+	// Destroy an alien.
+	err = ctrl.DestroyAlien(1)
+	require.Nil(t, err)
+
+	// Move an alien.
+	err = ctrl.MoveAlienToNextCity(app.State.Aliens[2])
+	require.Nil(t, err)
+
+	// Broadcast state changes.
+	go func() {
+		ctrl.BroadcastStateChanges()
+	}()
+
+	// Retrieve the state changes.
+	state = <-ctrl.ListenForStateUpdates()
+
+	// Check if the state changes have been broadcasted.
+	assert.True(t, len(state.Aliens) == 2)
+	assert.True(t, len(state.WorldMap.Cities) == 3)
+	assert.True(t, len(state.AlienLocations) == 3)
 }

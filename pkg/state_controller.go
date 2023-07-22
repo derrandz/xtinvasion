@@ -146,6 +146,26 @@ func (sc *StateController) AreRemainingAliensTrapped() bool {
 	return true
 }
 
+// CopyState is a state getter, returns a copy of the state
+// made public for testing
+func (sc *StateController) CopyState() AppState {
+	return *sc.app.State
+}
+
+// BroadcastStateChanges broadcasts the state changes to the state channel.
+// Non-blocking
+func (sc *StateController) BroadcastStateChanges() {
+	select {
+	case sc.app.stateCh <- sc.CopyState():
+	default:
+	}
+}
+
+// ListenForStateUpdates returns a channel that can be used to listen for state updates
+func (sc *StateController) ListenForStateUpdates() chan AppState {
+	return sc.app.stateCh
+}
+
 // App returns the app.
 func (sc *StateController) App() *App {
 	return sc.app

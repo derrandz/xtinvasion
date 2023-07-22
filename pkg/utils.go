@@ -62,3 +62,8 @@ func removeSliceElement[T any](slice []T, index int) []T {
 	newSlice := append(slice[:index], slice[index+1:]...)
 	return newSlice
 }
+
+// sleepMs sleeps for the given number of milliseconds
+func sleepMS(ms int) {
+	time.Sleep(time.Duration(ms) * time.Millisecond)
+}
