@@ -39,6 +39,8 @@ Run:
 $ make godoc
 ```
 
+and open the following link in your browser: http://localhost:6060/pkg/github.com/derrandz/xtinvasion/pkg/
+
 ### Bonus
 
 To run a terminal UI version to watch the simulation in action, run:
@@ -50,8 +52,6 @@ _Reduce max_moves to avoid waiting too long for the simulation to finish. You ca
 The terminal UI should look as follows:
 
 ![Terminal UI](./tui-screenshot.png)
-
-and open the following link in your browser: http://localhost:6060/pkg/github.com/derrandz/xtinvasion/pkg/
 
 ## Design
 
